@@ -1,19 +1,20 @@
 # Note: you are free to organize your code in the way you find most convenient.
 # However, make sure that when your main notebook is run, it executes the steps indicated in the assignment.
 import numpy as np
+import Functions
 
 class Perceptron:
     w : np.array
     x : np.array
     b : float
-    def __init__(self, initial_weight: np.array, initial_bias: float, activation_function):
+    def __init__(self, initial_weight: np.array, initial_bias: float, activation_function: Functions.ActivationFunction):
         self.w = initial_weight
         self.b = initial_bias
         self.activation_function = activation_function
     
     def forward(self, input):
         self.x = input
-        return self.activation_function(self.w.dot(input) + self.b)
+        return self.activation_function.f(self.w.dot(input) + self.b)
 
     def compute_loss(self, pred: float, actual: float):
         return actual - pred
@@ -22,7 +23,6 @@ class Perceptron:
         self.w += alpha * loss * self.x
         self.b += alpha * loss
         return 
-        
 
 class Layer:
     def __init__(self, input_size: int, layer_dim: int):
