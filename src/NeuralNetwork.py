@@ -19,7 +19,6 @@ class Perceptron:
         return actual - pred
 
     def update(self, loss, alpha):
-        print(self.x)
         self.w += alpha * loss * self.x
         self.b += alpha * loss
         return 
