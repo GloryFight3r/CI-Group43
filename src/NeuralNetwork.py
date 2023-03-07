@@ -13,7 +13,6 @@ class Perceptron:
     b_gradient : float
     def __init__(self, initial_weight: np.ndarray, initial_bias: float, activation_function: Functions.ActivationFunction):
         self.w = initial_weight
-        #print("Initial", self.w)
         self.b = initial_bias
         self.gradient = 0
         self.b_gradient = 0
@@ -21,7 +20,6 @@ class Perceptron:
     
     def forward(self, input : np.ndarray):
         self.x = input
-        #print(self.w, input)
         self.z = self.w.dot(input) + self.b
         self.a = self.activation_function.f(self.z)
         return self.a
@@ -57,15 +55,11 @@ class Layer:
         return output
     def flush_derivative(self, count:int, learning_rate:float):
         for perceptron in self.perceptrons:
-            #print(perceptron.w, perceptron.b)
-
             perceptron.w = perceptron.w + (learning_rate * perceptron.gradient / count)
             perceptron.b = perceptron.b + (learning_rate * perceptron.b_gradient / count)
 
             perceptron.gradient = 0
             perceptron.b_gradient = 0
-
-            #print(perceptron.w, perceptron.b)
 
 class ANN:
     layers : list[Layer]
@@ -118,7 +112,6 @@ class ANN:
         
         # backpropagate all layers except the first one - as it requires the input
         for l in range(len(self.layers) - 1, 0, -1):
-            #print(l)
             for j in range(len(self.layers[l].perceptrons)):
                 for k in range(len(self.layers[l - 1].perceptrons)):
                     to_calc = self.layers[l].perceptrons[j].activation_function.d(self.layers[l].perceptrons[j].z)
