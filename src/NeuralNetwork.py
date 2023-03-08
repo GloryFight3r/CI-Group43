@@ -64,9 +64,11 @@ class Layer:
 class ANN:
     layers : list[Layer]
     layers_count : int
-    def __init__(self, input_dimension : int, dimensions : list[int]):
+    learning_rate : float
+    def __init__(self, input_dimension : int, dimensions : list[int], learning_rate : float):
         self.layers = []
         self.layers_count = len(dimensions)
+        self.learning_rate = learning_rate
         
         self.layers.append(Layer(input_dimension, dimensions[0]))
     
@@ -96,7 +98,7 @@ class ANN:
 
                     self.layers[l].derivatives[j] += current_addition
 
-                    #current_addition = self.layers[l + 1].perceptrons[i].b
+                    current_addition = self.layers[l + 1].perceptrons[i].b
                     current_addition *= self.layers[l + 1].perceptrons[i].activation_function.d(z_i) 
                     current_addition *= self.layers[l + 1].b_derivatives[i]
 
@@ -140,9 +142,16 @@ class ANN:
 
                 perceptron.b_gradient += to_calc
 
-    def flush_derivatives(self, count:int, learning_rate:float):
+    def flush_derivatives(self, count:int):
         for layer in self.layers:
-            layer.flush_derivative(count, learning_rate)
+            layer.flush_derivative(count, self.learning_rate)
+
+    def fit(self, input:np.ndarray, output:np.ndarray, w=None):
+        for ind, x in enumerate(input):
+            #print(x)
+            self.predict(x)
+            self.back_propagate(x, output[ind])
+        self.flush_derivatives(len(input))
             
 '''
 class GCN(torch.nn.Module):
