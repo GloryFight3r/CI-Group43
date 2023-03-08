@@ -53,6 +53,7 @@ class Layer:
         for ind, perceptron in enumerate(self.perceptrons):
             output[ind] = perceptron.forward(input)
         return output
+
     def flush_derivative(self, count:int, learning_rate:float):
         for perceptron in self.perceptrons:
             perceptron.w = perceptron.w + (learning_rate * perceptron.gradient / count)
@@ -109,6 +110,9 @@ class ANN:
             input = cur_layer.calculate(input)
         return input
 
+    def predict_class(self, input: np.ndarray):
+        return sorted(list(enumerate(predict(input), 1)), lambda a: a[0])[-1][1]
+
     def back_propagate(self, input : np.ndarray, expected_output : np.ndarray):
         self.calc_derivatives(expected_output)
         
@@ -146,13 +150,57 @@ class ANN:
         for layer in self.layers:
             layer.flush_derivative(count, self.learning_rate)
 
-    def fit(self, input:np.ndarray, output:np.ndarray, w=None):
-        for ind, x in enumerate(input):
-            #print(x)
-            self.predict(x)
-            self.back_propagate(x, output[ind])
-        self.flush_derivatives(len(input))
-            
+    def fit(self, input:np.ndarray, output: np.ndarray):
+        history = []
+        shuffled_input = list(enumerate(input))
+        one_hot_output = prepare_output(output)
+        for e in range(epochs):
+            loss = 0
+            tp = 0
+            for ind, x in enumerate(shuffled_input, 1):
+                class_res = self.predict_class(x[1])
+                if class_res == output[x[0]]:
+                    tp += 1
+                for i in range(last_layer_size):
+                    loss += (one_hot_output[x[0]][i] - self.layers[self.layers_count - 1].perceptrons[i].a) ** 2
+            history.append(HistoryDict())
+            random.shuffle(shuffled_input)
+            for ind, x in enumerate(shuffled_input, 1):
+                self.predict(x[1])
+                self.back_propagate(x[1], output[x[0]])
+                if ind % batch_size == 0:
+                    self.flush_derivatives(len(input))
+
+def prepare_output(output: np.array, num_classes: int):
+    result = []
+    for target in output:
+        result.append(np.zeros(num_classes))
+        result[-1][target] = 1
+    return np.asarray(result)
+
+
+class HistoryDict(TypedDict):
+    loss: List[float]
+    acc: List[float]
+    val_loss: List[float]
+    val_acc: List[float]
+
+def plot_history(history: HistoryDict, title: str, font_size: Optional[int] = 14) -> None:
+    plt.suptitle(title, fontsize=font_size)
+    ax1 = plt.subplot(121)
+    ax1.set_title("Loss")
+    ax1.plot(history["loss"], label="train")
+    ax1.plot(history["val_loss"], label="val")
+    plt.xlabel("Epoch")
+    ax1.legend()
+
+    ax2 = plt.subplot(122)
+    ax2.set_title("Accuracy")
+    ax2.plot(history["acc"], label="train")
+    ax2.plot(history["val_acc"], label="val")
+    plt.xlabel("Epoch")
+    ax2.legend()
+
 '''
 class GCN(torch.nn.Module):
     def __init__(
