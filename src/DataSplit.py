@@ -1,6 +1,6 @@
 import numpy as np
 
-class DataSet:
+class DataSplit:
     def createData(self, val_percentage=0.1, test_percentage=0.1):
         features = np.genfromtxt("../data/features.txt", delimiter=",")
         targets = np.genfromtxt("../data/targets.txt", delimiter=",")

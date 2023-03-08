@@ -2,6 +2,7 @@
 # However, make sure that when your main notebook is run, it executes the steps indicated in the assignment.
 import numpy as np
 import Functions
+import random
 
 class Perceptron:
     w : np.ndarray
@@ -14,6 +15,7 @@ class Perceptron:
     def __init__(self, initial_weight: np.ndarray, initial_bias: float, activation_function: Functions.ActivationFunction):
         self.w = initial_weight
         self.b = initial_bias
+        self.a = 0
         self.gradient = 0
         self.b_gradient = 0
         self.activation_function = activation_function
@@ -110,8 +112,9 @@ class ANN:
             input = cur_layer.calculate(input)
         return input
 
-    def predict_class(self, input: np.ndarray):
-        return sorted(list(enumerate(predict(input), 1)), lambda a: a[0])[-1][1]
+    def predict_class(self, output: np.ndarray):
+        return np.where(output == np.max(output))[0][0] + 1
+
 
     def back_propagate(self, input : np.ndarray, expected_output : np.ndarray):
         self.calc_derivatives(expected_output)
@@ -150,10 +153,13 @@ class ANN:
         for layer in self.layers:
             layer.flush_derivative(count, self.learning_rate)
 
-    def fit(self, input:np.ndarray, output: np.ndarray):
+    def fit(self, input:np.ndarray, output: np.ndarray, val_in, val_out, batch_size, num_classes, epochs):
         history = []
         shuffled_input = list(enumerate(input))
-        one_hot_output = prepare_output(output)
+        one_hot_output = prepare_output(output, num_classes)
+
+        val_in = list(enumerate(val_in))
+        one_hot_val_output = prepare_output(val_out, num_classes)
         for e in range(epochs):
             loss = 0
             tp = 0
@@ -161,45 +167,46 @@ class ANN:
                 class_res = self.predict_class(x[1])
                 if class_res == output[x[0]]:
                     tp += 1
-                for i in range(last_layer_size):
+                for i in range(num_classes):
                     loss += (one_hot_output[x[0]][i] - self.layers[self.layers_count - 1].perceptrons[i].a) ** 2
-            history.append(HistoryDict())
+            loss /= len(shuffled_input)
+            tp /= len(shuffled_input)
+
+            val_loss = 0
+            val_tp = 0
+            for ind, x in enumerate(val_in, 1):
+                class_res = self.predict_class(x[1])
+                if class_res == val_out[x[0]]:
+                    val_tp += 1
+                for i in range(num_classes):
+                    val_loss += (one_hot_val_output[x[0]][i] - self.layers[self.layers_count - 1].perceptrons[i].a) ** 2
+            val_loss /= len(val_in)
+            val_tp /= len(val_in)
+            history.append(HistoryDict(loss, tp, val_loss, val_tp))
+
+            
             random.shuffle(shuffled_input)
             for ind, x in enumerate(shuffled_input, 1):
                 self.predict(x[1])
-                self.back_propagate(x[1], output[x[0]])
+                self.back_propagate(x[1], one_hot_output[x[0]])
                 if ind % batch_size == 0:
                     self.flush_derivatives(len(input))
+            print(history[-1].loss)
+        return history
 
-def prepare_output(output: np.array, num_classes: int):
-    result = []
-    for target in output:
-        result.append(np.zeros(num_classes))
-        result[-1][target] = 1
-    return np.asarray(result)
+def prepare_output(output: np.ndarray, num_classes: int):
+    result = np.zeros(output.shape[0] * num_classes).reshape(output.shape[0], num_classes)
+    for ind, target in enumerate(output):
+        result[ind, int(target) - 1] = 1
+    return result
 
 
-class HistoryDict(TypedDict):
-    loss: List[float]
-    acc: List[float]
-    val_loss: List[float]
-    val_acc: List[float]
-
-def plot_history(history: HistoryDict, title: str, font_size: Optional[int] = 14) -> None:
-    plt.suptitle(title, fontsize=font_size)
-    ax1 = plt.subplot(121)
-    ax1.set_title("Loss")
-    ax1.plot(history["loss"], label="train")
-    ax1.plot(history["val_loss"], label="val")
-    plt.xlabel("Epoch")
-    ax1.legend()
-
-    ax2 = plt.subplot(122)
-    ax2.set_title("Accuracy")
-    ax2.plot(history["acc"], label="train")
-    ax2.plot(history["val_acc"], label="val")
-    plt.xlabel("Epoch")
-    ax2.legend()
+class HistoryDict():
+    def __init__(self, loss, acc, val_loss, val_acc):
+        self.loss = loss
+        self.acc = acc
+        self.val_loss = val_loss
+        self.val_acc = val_acc
 
 '''
 class GCN(torch.nn.Module):
