@@ -76,13 +76,13 @@ class ANN:
             self.layers.append(Layer(dimensions[ind], sz))
             
 
-    def calc_derivatives(self, expected_output : np.ndarray):
+    def calc_derivatives(self, expected_output : np.ndarray, real_output : np.ndarray):
         # precalculate derivates of last layer
         last_layer_size = len(self.layers[self.layers_count - 1].perceptrons)
         
         for i in range(last_layer_size):
-            self.layers[self.layers_count - 1].derivatives[i] = 2 * (expected_output[i] - self.layers[self.layers_count - 1].perceptrons[i].a)
-            self.layers[self.layers_count - 1].b_derivatives[i] = 2 * (expected_output[i] - self.layers[self.layers_count - 1].perceptrons[i].a)
+            self.layers[self.layers_count - 1].derivatives[i] = 2 * (expected_output[i] - real_output[i])
+            self.layers[self.layers_count - 1].b_derivatives[i] = 2 * (expected_output[i] - real_output[i])
 
         # we start from layer_size - 1, ignoring the output layer
         for l in range(len(self.layers) - 2, -1, -1):
@@ -107,10 +107,17 @@ class ANN:
     def predict(self, input : np.ndarray):
         for cur_layer in self.layers:
             input = cur_layer.calculate(input)
-        return input
+        return self.apply_soft_max(input)
 
-    def back_propagate(self, input : np.ndarray, expected_output : np.ndarray):
-        self.calc_derivatives(expected_output)
+    def apply_soft_max(self, output):
+        sum = 0
+        for y in output:
+            sum += y
+        output /= sum
+        return output
+
+    def back_propagate(self, input : np.ndarray, expected_output : np.ndarray, actual_output : np.ndarray):
+        self.calc_derivatives(expected_output, actual_output)
         
         # backpropagate all layers except the first one - as it requires the input
         for l in range(len(self.layers) - 1, 0, -1):
@@ -149,8 +156,8 @@ class ANN:
     def fit(self, input:np.ndarray, output:np.ndarray, w=None):
         for ind, x in enumerate(input):
             #print(x)
-            self.predict(x)
-            self.back_propagate(x, output[ind])
+            y_hat = self.predict(x)
+            self.back_propagate(x, output[ind], y_hat)
         self.flush_derivatives(len(input))
             
 '''
