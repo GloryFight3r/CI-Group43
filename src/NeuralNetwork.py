@@ -4,14 +4,7 @@ import numpy as np
 import Functions
 import random
 
-class Perceptron:
-    w : np.ndarray
-    x : np.ndarray
-    a : float
-    b : float
-    z : float
-    gradient : float
-    b_gradient : float
+'''class Perceptron:
     def __init__(self, initial_weight: np.ndarray, initial_bias: float, activation_function: Functions.ActivationFunction):
         self.w = initial_weight
         self.b = initial_bias
@@ -33,36 +26,47 @@ class Perceptron:
         self.w += alpha * loss * self.x
         self.b += alpha * loss
         return 
-
+'''
 class Layer:
     input_size : int
     layer_dim : int
-    derivatives : np.ndarray
-    b_derivatives : np.ndarray
-    perceptrons : list[Perceptron]
 
-    def __init__(self, input_size: int, layer_dim: int):
+    w : np.ndarray
+    b : np.ndarray
+
+    a : np.ndarray
+    #x : np.ndarray
+    z : np.ndarray
+
+    gradient : np.ndarray
+    b_gradient : np.ndarray
+
+    activation_function : Functions.ActivationFunction
+
+    def __init__(self, input_size: int, layer_dim: int, activation_function: Functions.ActivationFunction):
         self.input_size = input_size
         self.layer_dim = layer_dim
 
-        self.derivatives = np.zeros(layer_dim)
-        self.b_derivatives = np.zeros(layer_dim
-                                      )
-        self.perceptrons = [Perceptron(np.random.rand(input_size), 0.1, Functions.Sigmoid) for i in range(layer_dim)]
-    def calculate(self, input : np.ndarray):
-        output = np.zeros(self.layer_dim)
+        self.w = np.random.randn(layer_dim, input_size) / np.sqrt(input_size)
+        self.b = np.zeros((layer_dim, 1))
+        self.activation_function = activation_function
+        
+        self.gradient = np.zeros(layer_dim * input_size).reshape(layer_dim, input_size)
+ 
+        self.b_gradient = np.zeros(layer_dim).reshape(-1, 1)
+    '''def calculate(self, input : np.ndarray):
+        self.z = self.w.dot(input) + self.b
+        self.a = self.activation_function.f(self.z)
 
-        for ind, perceptron in enumerate(self.perceptrons):
-            output[ind] = perceptron.forward(input)
-        return output
+        return self.a
+    '''
 
-    def flush_derivative(self, count:int, learning_rate:float):
-        for perceptron in self.perceptrons:
-            perceptron.w = perceptron.w - (learning_rate * perceptron.gradient / count)
-            perceptron.b = perceptron.b - (learning_rate * perceptron.b_gradient / count)
+    def flush_derivative(self, learning_rate:float):
+        self.w = self.w - (learning_rate * self.gradient)
+        self.b = self.b - (learning_rate * self.b_gradient)
 
-            perceptron.gradient = 0
-            perceptron.b_gradient = 0
+        self.gradient = np.zeros(self.layer_dim * self.input_size).reshape(self.layer_dim, self.input_size)
+        self.b_gradient = np.zeros(self.layer_dim).reshape(-1, 1)
 
 class ANN:
     layers : list[Layer]
@@ -73,90 +77,75 @@ class ANN:
         self.layers_count = len(dimensions)
         self.learning_rate = learning_rate
         
-        self.layers.append(Layer(input_dimension, dimensions[0]))
+        self.layers.append(Layer(input_dimension, dimensions[0], Functions.Sigmoid))
     
-        for ind, sz in enumerate(dimensions[1:]):
-            self.layers.append(Layer(dimensions[ind], sz))
-            
+        for ind, sz in enumerate(dimensions[1:-1]):
+            self.layers.append(Layer(dimensions[ind], sz, Functions.Sigmoid))
 
-    def calc_derivatives(self, expected_output : np.ndarray, real_output : np.ndarray):
-        # precalculate derivates of last layer
-        last_layer_size = len(self.layers[self.layers_count - 1].perceptrons)
-        
-        for i in range(last_layer_size):
-            self.layers[self.layers_count - 1].derivatives[i] = 2 * (expected_output[i] - real_output[i])
-            self.layers[self.layers_count - 1].b_derivatives[i] = 2 * (expected_output[i] - real_output[i])
+        self.layers.append(Layer(dimensions[-2], dimensions[-1], Functions.SoftMax))
+    
+    def forward(self, X:np.ndarray):
+        A = X.T
 
-        # we start from layer_size - 1, ignoring the output layer
-        for l in range(len(self.layers) - 2, -1, -1):
-            for j in range(len(self.layers[l].perceptrons)):
-                self.layers[l].b_derivatives[j] = 0
-                self.layers[l].derivatives[j] = 0
-                for i in range(len(self.layers[l + 1].perceptrons)):
-                    z_i = self.layers[l + 1].perceptrons[i].z
-                    
-                    current_addition = self.layers[l + 1].perceptrons[i].w[j]
-                    current_addition *= self.layers[l + 1].perceptrons[i].activation_function.d(z_i) 
-                    current_addition *= self.layers[l + 1].derivatives[i]
+        for l in range(self.layers_count):
+            Z = self.layers[l].w.dot(A) + self.layers[l].b
 
-                    self.layers[l].derivatives[j] += current_addition
+            A = self.layers[l].activation_function.f(Z)
 
-                    current_addition = self.layers[l + 1].perceptrons[i].b
-                    current_addition *= self.layers[l + 1].perceptrons[i].activation_function.d(z_i) 
-                    current_addition *= self.layers[l + 1].b_derivatives[i]
+            self.layers[l].a = A
+            self.layers[l].z = Z
+        return A
 
-                    self.layers[l].b_derivatives[j] += current_addition
-
-    def predict(self, input : np.ndarray):
+    '''def predict(self, input : np.ndarray):
         for cur_layer in self.layers:
             input = cur_layer.calculate(input)
-        return self.apply_soft_max(input)
 
+        return input #self.apply_soft_max(input)
+    '''
     def apply_soft_max(self, output):
-        sum = 0
-        for y in output:
-            sum += np.exp(y)
-        output = np.exp(output)
-        output /= sum
-        return output
+        return np.exp(output) / np.sum(np.exp(output))
+
     def predict_class(self, output: np.ndarray):
         return np.where(output == np.max(output))[0][0] + 1
 
-    #def predict_class(self, input: np.ndarray):
-    #    return sorted(list(enumerate(predict(input), 1)), lambda a: a[0])[-1][1]))
+    def back_propagate(self, input : np.ndarray, expected_output : np.ndarray):
+        #self.calc_derivatives(expected_output, actual_output)
+        n = input.shape[0]
 
-    def back_propagate(self, input : np.ndarray, expected_output : np.ndarray, actual_output : np.ndarray):
-        self.calc_derivatives(expected_output, actual_output)
-        # backpropagate all layers except the first one - as it requires the input
-        for l in range(len(self.layers) - 1, 0, -1):
-            for j in range(len(self.layers[l].perceptrons)):
-                
-                to_calc = self.layers[l].perceptrons[j].activation_function.d(self.layers[l].perceptrons[j].z)
-                to_calc *= self.layers[l].derivatives[j]
+        dZ = self.layers[-1].a - expected_output.T
 
-                for k in range(len(self.layers[l - 1].perceptrons)):
-                    #to_calc = self.layers[l - 1].perceptrons[k].a
-                    self.layers[l].perceptrons[j].gradient += to_calc * self.layers[l - 1].perceptrons[k].a
+        # last layer is softmax
+        dW = dZ.dot(self.layers[-2].a.T) / n
+        db = np.sum(dZ, axis=1, keepdims=True) / n
+        dAPrev = self.layers[-1].w.T.dot(dZ)
 
-                self.layers[l].perceptrons[j].b_gradient = len(self.layers[l - 1].perceptrons) * (self.layers[l].perceptrons[j].activation_function.d(self.layers[l].perceptrons[j].z) * self.layers[l].b_derivatives[j])
+        self.layers[self.layers_count - 1].gradient = dW
+        self.layers[self.layers_count - 1].b_gradient = db
+
+        # calc all other layers
+
+        for l in range(self.layers_count - 2, 0, -1):
+            dZ = dAPrev * self.layers[l].activation_function.d(self.layers[l].z)
+            dW = dZ.dot(self.layers[l - 1].a.T) / n
+            db = np.sum(dZ, axis=1, keepdims=True) / n
+
+            if l > 0:
+                dAPrev = self.layers[l].w.T.dot(dZ)
+            self.layers[l].gradient = dW
+            self.layers[l].b_gradient = db
         
-        # back propagate layer 0
-        for ind2, perceptron in enumerate(self.layers[0].perceptrons):
-            for ind in range(len(perceptron.w)):
-                to_calc = perceptron.activation_function.d(perceptron.z)
-                to_calc *= self.layers[0].derivatives[ind2]
-                to_calc *= input[ind]
+        dZ = dAPrev * self.layers[0].activation_function.d(self.layers[0].z)
 
-                perceptron.gradient += to_calc
+        dW = dZ.dot(input) / n
+        db = np.sum(dZ, axis=1, keepdims=True) / n
 
-                to_calc = perceptron.activation_function.d(perceptron.z)
-                to_calc *= self.layers[0].derivatives[ind2]
+        self.layers[0].gradient = dW
+        self.layers[0].b_gradient = db
 
-                perceptron.b_gradient += to_calc
 
-    def flush_derivatives(self, count:int):
+    def flush_derivatives(self):
         for layer in self.layers:
-            layer.flush_derivative(count, self.learning_rate)
+            layer.flush_derivative(self.learning_rate)
 
 #    def fit(self, input:np.ndarray, output:np.ndarray, w=None):        
 #        one_hot_output = prepare_output(output, 7)
@@ -186,6 +175,31 @@ class ANN:
 #                self.back_propagate(x[1], output[x[0]])
 #                if ind % batch_size == 0:
 #                    self.flush_derivatives(len(input))
+   
+
+    def predict(self, input:np.ndarray):
+        A = self.forward(input)
+        y_hat = np.argmax(A, axis=0) + 1
+        return y_hat
+
+    def predict_acc(self, input:np.ndarray, Y : np.ndarray):
+        A = self.forward(input)
+        y_hat = np.argmax(A, axis=0) + 1
+        accuracy = (y_hat == Y).mean()
+        return accuracy
+
+    def fit_2(self, input : np.ndarray, output : np.ndarray, num_classes, epochs):
+        one_hot_output = prepare_output(output, num_classes)
+        history = []
+        print(one_hot_output)
+            
+        for e in range(epochs):
+            self.forward(input)
+            self.back_propagate(input, one_hot_output)
+            self.flush_derivatives()
+
+        return history
+
     def fit(self, input:np.ndarray, output: np.ndarray, val_in, val_out, batch_size, num_classes, epochs):
         history = []
         shuffled_input = list(enumerate(input))
@@ -201,7 +215,7 @@ class ANN:
                 if class_res == output[x[0]]:
                     tp += 1
                 for i in range(num_classes):
-                    loss += (one_hot_output[x[0]][i] - self.layers[self.layers_count - 1].perceptrons[i].a) ** 2
+                    loss += (one_hot_output[x[0]][i] - self.layers[self.layers_count - 1].a[i]) ** 2
             loss /= len(shuffled_input)
             tp /= len(shuffled_input)
 
@@ -212,7 +226,7 @@ class ANN:
                 if class_res == val_out[x[0]]:
                     val_tp += 1
                 for i in range(num_classes):
-                    val_loss += (one_hot_val_output[x[0]][i] - self.layers[self.layers_count - 1].perceptrons[i].a) ** 2
+                    val_loss += (one_hot_val_output[x[0]][i] - self.layers[self.layers_count - 1].a[i]) ** 2
             val_loss /= len(val_in)
             val_tp /= len(val_in)
             history.append(HistoryDict(loss, tp, val_loss, val_tp))
@@ -226,6 +240,8 @@ class ANN:
                     self.flush_derivatives(len(input))
             print(history[-1].loss)
         return history
+
+
 
 def prepare_output(output: np.ndarray, num_classes: int):
     result = np.zeros(output.shape[0] * num_classes).reshape(output.shape[0], num_classes)
