@@ -54,12 +54,6 @@ class Layer:
         self.gradient = np.zeros(layer_dim * input_size).reshape(layer_dim, input_size)
  
         self.b_gradient = np.zeros(layer_dim).reshape(-1, 1)
-    '''def calculate(self, input : np.ndarray):
-        self.z = self.w.dot(input) + self.b
-        self.a = self.activation_function.f(self.z)
-
-        return self.a
-    '''
 
     def flush_derivative(self, learning_rate:float):
         self.w = self.w - (learning_rate * self.gradient)
@@ -96,12 +90,6 @@ class ANN:
             self.layers[l].z = Z
         return A
 
-    '''def predict(self, input : np.ndarray):
-        for cur_layer in self.layers:
-            input = cur_layer.calculate(input)
-
-        return input #self.apply_soft_max(input)
-    '''
     def apply_soft_max(self, output):
         return np.exp(output) / np.sum(np.exp(output))
 
@@ -119,8 +107,8 @@ class ANN:
         db = np.sum(dZ, axis=1, keepdims=True) / n
         dAPrev = self.layers[-1].w.T.dot(dZ)
 
-        self.layers[self.layers_count - 1].gradient = dW
-        self.layers[self.layers_count - 1].b_gradient = db
+        self.layers[self.layers_count - 1].gradient += dW
+        self.layers[self.layers_count - 1].b_gradient += db
 
         # calc all other layers
 
@@ -131,50 +119,21 @@ class ANN:
 
             if l > 0:
                 dAPrev = self.layers[l].w.T.dot(dZ)
-            self.layers[l].gradient = dW
-            self.layers[l].b_gradient = db
+            self.layers[l].gradient += dW
+            self.layers[l].b_gradient += db
         
         dZ = dAPrev * self.layers[0].activation_function.d(self.layers[0].z)
 
         dW = dZ.dot(input) / n
         db = np.sum(dZ, axis=1, keepdims=True) / n
 
-        self.layers[0].gradient = dW
-        self.layers[0].b_gradient = db
+        self.layers[0].gradient += dW
+        self.layers[0].b_gradient += db
 
 
     def flush_derivatives(self):
         for layer in self.layers:
             layer.flush_derivative(self.learning_rate)
-
-#    def fit(self, input:np.ndarray, output:np.ndarray, w=None):        
-#        one_hot_output = prepare_output(output, 7)
-#        for ind, x in enumerate(input):
-#            #print(x)
-#            y_hat = self.predict(x)
-#            self.back_propagate(x, one_hot_output[ind], y_hat)
-#            self.flush_derivatives(1)
-            
-#    def fit(self, input:np.ndarray, output: np.ndarray):
-#        history = []
-#        shuffled_input = list(enumerate(input))
-#        one_hot_output = prepare_output(output)
-#        for e in range(epochs):
-#            loss = 0
-#            tp = 0
-#            for ind, x in enumerate(shuffled_input, 1):
-#                class_res = self.predict_class(x[1])
-#                if class_res == output[x[0]]:
-#                    tp += 1
-#                for i in range(last_layer_size):
-#                    loss += (one_hot_output[x[0]][i] - self.layers[self.layers_count - 1].perceptrons[i].a) ** 2
-#            history.append(HistoryDict())
-#            random.shuffle(shuffled_input)
-#            for ind, x in enumerate(shuffled_input, 1):
-#                self.predict(x[1])
-#                self.back_propagate(x[1], output[x[0]])
-#                if ind % batch_size == 0:
-#                    self.flush_derivatives(len(input))
    
 
     def predict(self, input:np.ndarray):
@@ -188,57 +147,49 @@ class ANN:
         accuracy = (y_hat == Y).mean()
         return accuracy
 
+    def fit_2_improved(self, input : np.ndarray, output : np.ndarray, val_in, val_output, num_classes, epochs):
+        one_hot_output = prepare_output(output, num_classes)
+        one_hot_val_output = prepare_output(val_output, num_classes)
+        
+        history = []
+            
+        for e in range(epochs):
+            self.forward(input)
+            self.back_propagate(input, one_hot_output)
+            self.flush_derivatives()
+            if e % 5 == 0:
+                train_accuracy, train_loss = self.loss_and_accuracy(input, output, one_hot_output)
+                val_accuracy, val_loss = self.loss_and_accuracy(val_in, val_output, one_hot_val_output)
+                history.append(HistoryDict(train_loss, train_accuracy, val_loss, val_accuracy))
+
+        return history
+
+    def loss_and_accuracy(self, input, output, one_hot_output):
+        oh = one_hot_output.T
+        A = self.forward(input)
+
+        y_hat = np.argmax(A, axis=0) + 1
+        train_accuracy = (y_hat == output).mean()
+
+        #L2 Loss
+        temp = A - oh
+        temp = temp ** 2
+        train_loss = 0
+        for vector in temp:
+            train_loss += np.sum(vector) / A.shape[1]
+
+        return (train_accuracy, train_loss)
+
     def fit_2(self, input : np.ndarray, output : np.ndarray, num_classes, epochs):
         one_hot_output = prepare_output(output, num_classes)
+
         history = []
-        print(one_hot_output)
             
         for e in range(epochs):
             self.forward(input)
             self.back_propagate(input, one_hot_output)
             self.flush_derivatives()
 
-        return history
-
-    def fit(self, input:np.ndarray, output: np.ndarray, val_in, val_out, batch_size, num_classes, epochs):
-        history = []
-        shuffled_input = list(enumerate(input))
-        one_hot_output = prepare_output(output, num_classes)
-
-        val_in = list(enumerate(val_in))
-        one_hot_val_output = prepare_output(val_out, num_classes)
-        for e in range(epochs):
-            loss = 0
-            tp = 0
-            for ind, x in enumerate(shuffled_input, 1):
-                class_res = self.predict_class(x[1])
-                if class_res == output[x[0]]:
-                    tp += 1
-                for i in range(num_classes):
-                    loss += (one_hot_output[x[0]][i] - self.layers[self.layers_count - 1].a[i]) ** 2
-            loss /= len(shuffled_input)
-            tp /= len(shuffled_input)
-
-            val_loss = 0
-            val_tp = 0
-            for ind, x in enumerate(val_in, 1):
-                class_res = self.predict_class(x[1])
-                if class_res == val_out[x[0]]:
-                    val_tp += 1
-                for i in range(num_classes):
-                    val_loss += (one_hot_val_output[x[0]][i] - self.layers[self.layers_count - 1].a[i]) ** 2
-            val_loss /= len(val_in)
-            val_tp /= len(val_in)
-            history.append(HistoryDict(loss, tp, val_loss, val_tp))
-
-            
-            random.shuffle(shuffled_input)
-            for ind, x in enumerate(shuffled_input, 1):
-                self.predict(x[1])
-                self.back_propagate(x[1], output, one_hot_output[x[0]])
-                if ind % batch_size == 0:
-                    self.flush_derivatives(len(input))
-            print(history[-1].loss)
         return history
 
 
@@ -249,32 +200,17 @@ def prepare_output(output: np.ndarray, num_classes: int):
         result[ind, int(target) - 1] = 1
     return result
 
-'''class HistoryDict(TypedDict):
-    loss: List[float]
-    acc: List[float]
-    val_loss: List[float]
-    val_acc: List[float]
-
-def plot_history(history: HistoryDict, title: str, font_size: Optional[int] = 14) -> None:
-    plt.suptitle(title, fontsize=font_size)
-    ax1 = plt.subplot(121)
-    ax1.set_title("Loss")
-    ax1.plot(history["loss"], label="train")
-    ax1.plot(history["val_loss"], label="val")
-    plt.xlabel("Epoch")
-    ax1.legend()
-
-    ax2 = plt.subplot(122)
-    ax2.set_title("Accuracy")
-    ax2.plot(history["acc"], label="train")
-    ax2.plot(history["val_acc"], label="val")
-    plt.xlabel("Epoch")
-    ax2.legend()
-    '''
 class HistoryDict():
     def __init__(self, loss, acc, val_loss, val_acc):
         self.loss = loss
         self.acc = acc
         self.val_loss = val_loss
         self.val_acc = val_acc
+
+    def __str__(self):
+        return f'({self.loss}, {self.acc}, {self.val_loss}, {self.val_acc})' 
+
+    def __repr__(self):
+        return self.__str__()
+
 
