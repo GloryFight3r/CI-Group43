@@ -147,20 +147,29 @@ class ANN:
         accuracy = (y_hat == Y).mean()
         return accuracy
 
-    def fit_2_improved(self, input : np.ndarray, output : np.ndarray, val_in, val_output, num_classes, epochs):
+    def fit(self, input : np.ndarray, output : np.ndarray, val_in, val_output, num_classes, epochs, early_stop):
         one_hot_output = prepare_output(output, num_classes)
         one_hot_val_output = prepare_output(val_output, num_classes)
         
         history = []
-            
+        previous_acc = 0
+        eps = 0.001
         for e in range(epochs):
             self.forward(input)
             self.back_propagate(input, one_hot_output)
             self.flush_derivatives()
+
             if e % 5 == 0:
-                train_accuracy, train_loss = self.loss_and_accuracy(input, output, one_hot_output)
                 val_accuracy, val_loss = self.loss_and_accuracy(val_in, val_output, one_hot_val_output)
+                train_accuracy, train_loss = self.loss_and_accuracy(input, output, one_hot_output)
                 history.append(HistoryDict(train_loss, train_accuracy, val_loss, val_accuracy))
+            
+            if e % early_stop == 0:
+                val_accuracy, val_loss = self.loss_and_accuracy(val_in, val_output, one_hot_val_output)
+                if val_accuracy - previous_acc < eps:
+                    break
+
+                previous_acc = val_accuracy
 
         return history
 
@@ -171,54 +180,10 @@ class ANN:
         y_hat = np.argmax(A, axis=0) + 1
         train_accuracy = (y_hat == output).mean()
 
-        #L2 Loss
-        temp = A - oh
-        temp = temp ** 2
-        train_loss = 0
-        for vector in temp:
-            train_loss += np.sum(vector) / A.shape[1]
+        #Cross entropy Loss
+        train_loss = -np.mean(one_hot_output * np.log(A.T + 1e-8))
 
         return (train_accuracy, train_loss)
-
-    def fit(self, input : np.ndarray, output : np.ndarray, val_input : np.ndarray, 
-            val_output : np.ndarray, num_classes : int, epochs : int, early_stop : float):
-
-        one_hot_output = prepare_output(output, num_classes)
-        val_one_hot_output = prepare_output(val_output, num_classes)
-        history = []
-        #print(one_hot_output)
-        previous_acc = 0
-        for e in range(epochs):
-
-            A = self.forward(input)
-            
-            y_hat = np.argmax(A, axis=0) + 1
-            accuracy = (y_hat == output).mean()
-
-            print(accuracy, previous_acc)
-            if e % 100 == 0:
-                if accuracy - previous_acc < early_stop:
-                    break
-
-                previous_acc = accuracy
-            
-            loss = -np.mean(one_hot_output * np.log(A.T + 1e-8))
-           
-            self.back_propagate(input, one_hot_output)
-
-            A2 = self.forward(val_input)
-
-            y_hat = np.argmax(A2, axis=0) + 1
-            val_accuracy = (y_hat == val_output).mean()
-
-            val_loss = -np.mean(val_one_hot_output * np.log(A2.T + 1e-8))
-
-            history.append(HistoryDict(loss, accuracy, val_loss, val_accuracy))
-
-            self.flush_derivatives()
-
-        return history
-
 
 def prepare_output(output: np.ndarray, num_classes: int):
     result = np.zeros(output.shape[0] * num_classes).reshape(output.shape[0], num_classes)
