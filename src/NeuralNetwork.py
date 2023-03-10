@@ -35,7 +35,6 @@ class Layer:
     b : np.ndarray
 
     a : np.ndarray
-    #x : np.ndarray
     z : np.ndarray
 
     gradient : np.ndarray
@@ -97,7 +96,6 @@ class ANN:
         return np.where(output == np.max(output))[0][0] + 1
 
     def back_propagate(self, input : np.ndarray, expected_output : np.ndarray):
-        #self.calc_derivatives(expected_output, actual_output)
         n = input.shape[0]
 
         dZ = self.layers[-1].a - expected_output.T
@@ -147,6 +145,14 @@ class ANN:
         accuracy = (y_hat == Y).mean()
         return accuracy
 
+    def confusion_matrix(self, input:np.ndarray, Y : np.ndarray, num_classes):
+        matrix = [ [0 for j in range(num_classes)] for i in range(num_classes) ]
+        A = self.forward(input)
+        y_hat = np.argmax(A, axis=0) + 1
+        for i in range(len(y_hat)):
+            matrix[int(y_hat[i] - 1)][int(Y[i] - 1)] += 1
+        return matrix
+
     def fit(self, input : np.ndarray, output : np.ndarray, val_in, val_output, num_classes, epochs, early_stop):
         one_hot_output = prepare_output(output, num_classes)
         one_hot_val_output = prepare_output(val_output, num_classes)
@@ -159,10 +165,9 @@ class ANN:
             self.back_propagate(input, one_hot_output)
             self.flush_derivatives()
 
-            if e % 5 == 0:
-                val_accuracy, val_loss = self.loss_and_accuracy(val_in, val_output, one_hot_val_output)
-                train_accuracy, train_loss = self.loss_and_accuracy(input, output, one_hot_output)
-                history.append(HistoryDict(train_loss, train_accuracy, val_loss, val_accuracy))
+            val_accuracy, val_loss = self.loss_and_accuracy(val_in, val_output, one_hot_val_output)
+            train_accuracy, train_loss = self.loss_and_accuracy(input, output, one_hot_output)
+            history.append(HistoryDict(train_loss, train_accuracy, val_loss, val_accuracy))
             
             if e % early_stop == 0:
                 val_accuracy, val_loss = self.loss_and_accuracy(val_in, val_output, one_hot_val_output)
