@@ -71,12 +71,12 @@ class ANN:
         self.layers_count = len(dimensions)
         self.learning_rate = learning_rate
         
-        self.layers.append(Layer(input_dimension, dimensions[0], Functions.Sigmoid))
-    
-        for ind, sz in enumerate(dimensions[1:-1]):
-            self.layers.append(Layer(dimensions[ind], sz, Functions.Sigmoid))
+        prev = input_dimension
+        for sz in dimensions[0:-1]:
+            self.layers.append(Layer(prev, sz, Functions.Sigmoid))
+            prev = sz
 
-        self.layers.append(Layer(dimensions[-2], dimensions[-1], Functions.SoftMax))
+        self.layers.append(Layer(prev, dimensions[-1], Functions.SoftMax))
     
     def forward(self, X:np.ndarray):
         A = X.T
@@ -180,18 +180,44 @@ class ANN:
 
         return (train_accuracy, train_loss)
 
-    def fit_2(self, input : np.ndarray, output : np.ndarray, num_classes, epochs):
-        one_hot_output = prepare_output(output, num_classes)
+    def fit(self, input : np.ndarray, output : np.ndarray, val_input : np.ndarray, 
+            val_output : np.ndarray, num_classes : int, epochs : int, early_stop : float):
 
+        one_hot_output = prepare_output(output, num_classes)
+        val_one_hot_output = prepare_output(val_output, num_classes)
         history = []
-            
+        #print(one_hot_output)
+        previous_acc = 0
         for e in range(epochs):
-            self.forward(input)
+
+            A = self.forward(input)
+            
+            y_hat = np.argmax(A, axis=0) + 1
+            accuracy = (y_hat == output).mean()
+
+            print(accuracy, previous_acc)
+            if e % 100 == 0:
+                if accuracy - previous_acc < early_stop:
+                    break
+
+                previous_acc = accuracy
+            
+            loss = -np.mean(one_hot_output * np.log(A.T + 1e-8))
+           
             self.back_propagate(input, one_hot_output)
+
+            A2 = self.forward(val_input)
+
+            y_hat = np.argmax(A2, axis=0) + 1
+            val_accuracy = (y_hat == val_output).mean()
+
+            val_loss = -np.mean(val_one_hot_output * np.log(A2.T + 1e-8))
+
+            history.append(HistoryDict(loss, accuracy, val_loss, val_accuracy))
+
             self.flush_derivatives()
 
         return history
-
 
 
 def prepare_output(output: np.ndarray, num_classes: int):
