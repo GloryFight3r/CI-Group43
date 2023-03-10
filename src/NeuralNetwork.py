@@ -74,10 +74,14 @@ class ANN:
         for sz in dimensions[0:-1]:
             self.layers.append(Layer(prev, sz, Functions.Sigmoid))
             prev = sz
-
+        
+        # last layer user softmax activation function
         self.layers.append(Layer(prev, dimensions[-1], Functions.SoftMax))
     
     def forward(self, X:np.ndarray):
+        """
+        Forward propagates the matrix containing data records for the current input X
+        """
         A = X.T
 
         for l in range(self.layers_count):
@@ -96,8 +100,15 @@ class ANN:
         return np.where(output == np.max(output))[0][0] + 1
 
     def back_propagate(self, input : np.ndarray, expected_output : np.ndarray):
+        """
+        Parameters
+        -------------
+        input : matrix containing input
+        expected_output : matrix containing output in a one-hot encoded format
+        """
         n = input.shape[0]
 
+        # calculate derivative of the cross entropy loss function on the last layer
         dZ = self.layers[-1].a - expected_output.T
 
         # last layer is softmax
@@ -108,8 +119,7 @@ class ANN:
         self.layers[self.layers_count - 1].gradient += dW
         self.layers[self.layers_count - 1].b_gradient += db
 
-        # calc all other layers
-
+        # calc all other layers except the last and first layers
         for l in range(self.layers_count - 2, 0, -1):
             dZ = dAPrev * self.layers[l].activation_function.d(self.layers[l].z)
             dW = dZ.dot(self.layers[l - 1].a.T) / n
@@ -120,6 +130,7 @@ class ANN:
             self.layers[l].gradient += dW
             self.layers[l].b_gradient += db
         
+        # calculate derivative for the first layer - we don't techincally have an input layer so we have to do this
         dZ = dAPrev * self.layers[0].activation_function.d(self.layers[0].z)
 
         dW = dZ.dot(input) / n
@@ -154,16 +165,25 @@ class ANN:
         return matrix
 
     def fit(self, input : np.ndarray, output : np.ndarray, val_in, val_output, num_classes, epochs, early_stop):
+        """
+        Parameters 
+        -----------
+        input - matrix containing data records per row with features as columns of training data set
+        output - array containing labels for data records of training data set 
+        val_in - matrix containing data records per row with features as columns of validation data set
+        val_output - array containing labels for data records of validation data set
+        """
+
         one_hot_output = prepare_output(output, num_classes)
         one_hot_val_output = prepare_output(val_output, num_classes)
         
         history = []
-        previous_acc = 0
-        eps = 0.001
+        previous_acc = 0 # previous accuracy we had achieved early_stop epochs before
+        eps = 0.001 # difference between accuracy for validation data set for which we stop training
         for e in range(epochs):
-            self.forward(input)
-            self.back_propagate(input, one_hot_output)
-            self.flush_derivatives()
+            self.forward(input) # forward propagation of input
+            self.back_propagate(input, one_hot_output) # backward propagation of loss 
+            self.flush_derivatives() # flush the gradient for the weights/biases
 
             val_accuracy, val_loss = self.loss_and_accuracy(val_in, val_output, one_hot_val_output)
             train_accuracy, train_loss = self.loss_and_accuracy(input, output, one_hot_output)
@@ -171,7 +191,7 @@ class ANN:
             
             if e % early_stop == 0:
                 val_accuracy, val_loss = self.loss_and_accuracy(val_in, val_output, one_hot_val_output)
-                if val_accuracy - previous_acc < eps:
+                if val_accuracy - previous_acc < eps: # check whether we should stop training
                     break
 
                 previous_acc = val_accuracy
