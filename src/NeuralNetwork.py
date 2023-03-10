@@ -4,7 +4,7 @@ import numpy as np
 import Functions
 import random
 
-'''class Perceptron:
+class Perceptron:
     def __init__(self, initial_weight: np.ndarray, initial_bias: float, activation_function: Functions.ActivationFunction):
         self.w = initial_weight
         self.b = initial_bias
@@ -26,7 +26,7 @@ import random
         self.w += alpha * loss * self.x
         self.b += alpha * loss
         return 
-'''
+
 class Layer:
     input_size : int
     layer_dim : int
