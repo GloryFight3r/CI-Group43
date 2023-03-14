@@ -35,6 +35,10 @@ class Coordinate:
     def subtract_direction(self, dir):
         return self.subtract_coordinate(self.dir_to_coordinate_delta(dir))
 
+    def __hash__(self):
+        return hash((self.x, self.y))
+
+
     # String representation of coordinate
     # @return String representation of coordinate
     def __str__(self):

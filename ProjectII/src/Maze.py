@@ -23,31 +23,32 @@ class Maze:
 
     # Initialize pheromones to a start value.
     def initialize_pheromones(self):
-        self.pheromones_matrix = np.zeros((self.length * self.width, self.length * self.width))
+        self.pheromones_matrix = dict()
         for i in range(self.width):
             for j in range(self.length):
                 position = Coordinate(i, j)
+                if self.walls[position.get_x()][position.get_y()] == 0:
+                    continue
+                self.pheromones_matrix[position] = dict()
+
                 N = position.add_direction(Direction.north)
-                if self.in_bounds(N):
-                    self.pheromones_matrix[self.regular_to_adj(N)][self.regular_to_adj(position)] = 1
+                if self.in_bounds(N) and self.walls[N.get_x()][N.get_y()] == 1:
+                    self.pheromones_matrix[position][N] = 1
 
                 S = position.add_direction(Direction.south)
-                if self.in_bounds(S):
-                    self.pheromones_matrix[self.regular_to_adj(S)][self.regular_to_adj(position)] = 1
+                if self.in_bounds(S) and self.walls[S.get_x()][S.get_y()] == 1:
+                    self.pheromones_matrix[position][S] = 1
 
                 E = position.add_direction(Direction.east)
-                if self.in_bounds(E):
-                    self.pheromones_matrix[self.regular_to_adj(E)][self.regular_to_adj(position)] = 1
+                if self.in_bounds(E) and self.walls[E.get_x()][E.get_y()] == 1:
+                    self.pheromones_matrix[position][E] = 1
 
                 W = position.add_direction(Direction.west)
-                if self.in_bounds(W):
-                    self.pheromones_matrix[self.regular_to_adj(W)][self.regular_to_adj(position)] = 1
+                if self.in_bounds(W) and self.walls[W.get_x()][W.get_y()] == 1:
+                    self.pheromones_matrix[position][W] = 1
 
         # debug print
-        print(self.pheromones_matrix.view())
-
-    def regular_to_adj(self, position):
-        return position.get_x() * self.length + position.get_y()
+        print(self.pheromones_matrix)
 
     # Reset the maze for a new shortest path problem.
     def reset(self):
@@ -68,7 +69,8 @@ class Maze:
 
         drop_value = q / len(walk_history)
         for i in range(1, len(coords)):
-            self.pheromones_matrix[self.regular_to_adj(coords[i])][self.regular_to_adj(coords[i - 1])] += drop_value
+            self.pheromones_matrix[coords[i - 1]][coords[i]] += drop_value
+        print(self.pheromones_matrix)
         return
 
      # Update pheromones for a list of routes
