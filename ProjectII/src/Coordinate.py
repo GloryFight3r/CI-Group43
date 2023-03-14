@@ -38,7 +38,10 @@ class Coordinate:
     # String representation of coordinate
     # @return String representation of coordinate
     def __str__(self):
-        return str(self.x) + ", " + str(self.y)
+        return "(" + str(self.x) + ", " + str(self.y) + ")"
+    
+    def __repr__(self):
+        return self.__str__()
 
     # Equals method for Coordinate
     # @param other Other Coordinate to check
