@@ -10,13 +10,16 @@ class Candidate:
     def encode(self, chromosome: np.ndarray):
         encoded = []
         for i in chromosome:
-            encoded.append(bin(i)[-self.maxBit:])
+            to_str = bin(i)[2:]
+            to_str = ('0' * (self.maxBit - len(to_str))) + to_str
+
+            encoded.append(to_str)
         return encoded
 
-    def decode(self):
-        return_array = np.zeros(len(self.chromosome))
-        for ind, cur_number in enumerate(self.chromosome):
-            cur_number = int(current, '2')
+    def decode(self)->np.ndarray:
+        return_array = np.zeros(len(self.chromosome), dtype='int')
+        for ind, number in enumerate(self.chromosome):
+            cur_number = int(number, 2)
             return_array[ind] = cur_number
         return return_array
         
@@ -29,10 +32,16 @@ class Candidate:
             prev_number = cur_number
         return cur_fitness
 
-    def produce_offspring(self, other_chromosome: Candidate):
+    def is_legal(self)->bool:
+        data = self.decode()
+        seen = np.zeros(len(data), dtype=bool)
+        seen[data] = True
+        return np.all(seen)
+
+    def produce_offspring(self, other_chromosome, cross_over_prob: float, mutation_prob: float):
         pass
 
-    def cross_over(self, other_chromosome: Candidate):
+    def cross_over(self, other_chromosome):
         pass
     def mutate(self, p: float):
         pass
@@ -59,20 +68,42 @@ class GeneticAlgorithm:
 
     def calculate_fitness(self, population: list[Candidate], tsp_data: TSPData) -> np.ndarray:
         fitness_array = np.zeros(len(population))
-        for current_candidate in population:
-            current_candidate.calculate_fitness(tsp_data)
+        for ind, current_candidate in enumerate(population):
+            fitness_array[ind] = current_candidate.calculate_fitness(tsp_data)
         return fitness_array
 
-    def produce_offspring(self, population: list[Candidate], fitness_ratio: np.ndarray) -> list[Candidate]:
-        fitness_raitio = enumerate(fitness_ratio)
+    def pick_candidate(self, fitness_ratio, prob: float):
+        #print(fitness_ratio)
+        #print(np.where(fitness_ratio > prob)[0][0], prob)
+        return np.where(fitness_ratio > prob)[0][0]
 
-        for pop_to_produce in self.pop_size:
+    def produce_offspring(self, population: list[Candidate], fitness_ratio: np.ndarray, c_p: float, m_p: float) -> list[Candidate]:
+        #print(fitness_ratio)
+        fitness_ratio = list(np.ndenumerate(fitness_ratio))
+        #print(fitness_ratio)
+        fitness_ratio_with_ind = sorted(fitness_ratio, key = lambda x : x[1])
+        fitness_ratio = np.cumsum(np.array(list(map(lambda z : z[1], fitness_ratio_with_ind))))
+
+        print(fitness_ratio)
+
+        offspring = []
+
+        for pop_to_produce in range(self.pop_size):
             while True:
-                first_candidate = 0
-                second_candidate = 0
+                first_ind = self.pick_candidate(fitness_ratio, np.random.rand())
+                second_ind = self.pick_candidate(fitness_ratio, np.random.rand())
+                real_first_ind = fitness_ratio_with_ind[first_ind][0][0]
+                real_second_ind = fitness_ratio_with_ind[second_ind][0][0]
+                
+                first_candidate:Candidate = population[real_first_ind]
+                second_candidate:Candidate = population[real_second_ind]
+                
+                new_offspring = first_candidate.produce_offspring(second_candidate, c_p, m_p)
+                if new_offspring.is_legal():
+                    offspring.append(new_offspring)
+                    break
 
-
-        pass
+        return offspring
 
     # This method should solve the TSP.
     # @param pd the TSP data.
@@ -80,13 +111,15 @@ class GeneticAlgorithm:
     def solve_tsp(self, tsp_data: TSPData):
         n_items = len(tsp_data.get_distances())
         # choose initial population
-        population = self.encode_data(n_items, self.pop_size, np.log2(n_items) + 1)
+        #print(n_items, int(np.log2(n_items)) + 1)
+        population = self.encode_data(n_items, self.pop_size, int(np.log2(n_items)) + 1)
 
-        for i in self.pop_size:
+        for i in range(self.pop_size):
             # make offspring
             # calculate fitness function for the current population
             fitness = self.calculate_fitness(population, tsp_data)
+            #print(fitness)
             fitness_ratio = fitness / np.sum(fitness)
-            population = produce_offspring(population, fitness_ratio)
+            population = self.produce_offspring(population, fitness_ratio, 0.0, 0.0)
 
         return []
