@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import copy
 from TSPData import TSPData
 
 class Candidate:
@@ -34,16 +35,36 @@ class Candidate:
 
     def is_legal(self)->bool:
         data = self.decode()
-        seen = np.zeros(len(data), dtype=bool)
+        k = len(data)
+        data = np.array(list(filter(lambda x : x < k, data)))
+        seen = np.zeros(k, dtype=bool)
         seen[data] = True
         return np.all(seen)
 
     def produce_offspring(self, other_chromosome, cross_over_prob: float, mutation_prob: float):
-        pass
+        cross_over_chance = np.random.rand()
+
+        new_cand = copy.deepcopy(self)
+
+        if(cross_over_chance <= cross_over_prob):
+            new_cand.cross_over(other_chromosome)
+
+        new_cand.mutate(mutation_prob)
+
+        return new_cand
 
     def cross_over(self, other_chromosome):
-        pass
+        start_from = np.random.randint(len(self.chromosome))
+
+        self.chromosome[start_from:] = other_chromosome.chromosome[start_from:]
     def mutate(self, p: float):
+        for ind, gene in enumerate(self.chromosome):
+            indeces = np.where(np.random.rand(self.maxBit) <= p)[0]
+            newGene = gene
+            for z in indeces:
+                newGene = newGene[:z] + ('1' if newGene[z] == '0' else '0') + newGene[z + 1:]
+            self.chromosome[ind] = newGene
+        #print(self.chromosome)
         pass
 
 # TSP problem solver using genetic algorithms.
@@ -78,13 +99,11 @@ class GeneticAlgorithm:
         return np.where(fitness_ratio > prob)[0][0]
 
     def produce_offspring(self, population: list[Candidate], fitness_ratio: np.ndarray, c_p: float, m_p: float) -> list[Candidate]:
-        #print(fitness_ratio)
         fitness_ratio = list(np.ndenumerate(fitness_ratio))
-        #print(fitness_ratio)
         fitness_ratio_with_ind = sorted(fitness_ratio, key = lambda x : x[1])
         fitness_ratio = np.cumsum(np.array(list(map(lambda z : z[1], fitness_ratio_with_ind))))
 
-        print(fitness_ratio)
+        #print(fitness_ratio)
 
         offspring = []
 
@@ -108,18 +127,25 @@ class GeneticAlgorithm:
     # This method should solve the TSP.
     # @param pd the TSP data.
     # @return the optimized product sequence.
-    def solve_tsp(self, tsp_data: TSPData):
+    def solve_tsp(self, tsp_data: TSPData, cross_over_prob, mutation_prob):
         n_items = len(tsp_data.get_distances())
         # choose initial population
         #print(n_items, int(np.log2(n_items)) + 1)
         population = self.encode_data(n_items, self.pop_size, int(np.log2(n_items)) + 1)
-
+        bst = 1000
         for i in range(self.pop_size):
             # make offspring
             # calculate fitness function for the current population
             fitness = self.calculate_fitness(population, tsp_data)
             #print(fitness)
-            fitness_ratio = fitness / np.sum(fitness)
-            population = self.produce_offspring(population, fitness_ratio, 0.0, 0.0)
-
+            max_value = np.max(fitness) + 0.001
+            min_value = np.min(fitness)
+    
+            bst = min_value
+            
+            fitness_ratio = ((max_value - fitness) / (max_value - min_value))
+            fitness_ratio = fitness_ratio / np.sum(fitness_ratio)
+            #print(fitness_ratio)
+            population = self.produce_offspring(population, fitness_ratio, cross_over_prob, mutation_prob)
+        print(bst)
         return []
