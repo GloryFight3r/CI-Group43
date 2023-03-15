@@ -61,10 +61,32 @@ class Candidate:
         return [new_cand]
 
     def cross_over(self, other_chromosome):
-        start_from = np.random.randint(len(self.chromosome))
+        #start_from = np.random.randint(len(self.chromosome))
 
-        self.chromosome[start_from:] = other_chromosome.chromosome[start_from:]
-        other_chromosome.chromosome[:start_from] = self.chromosome[:start_from]
+        save_first = np.array(copy.deepcopy(self.chromosome))
+
+        cur_element = other_chromosome.chromosome[0]
+
+        visited = {'z'}
+
+        while cur_element not in visited:
+            visited.add(cur_element)
+
+            #print(save_first, cur_element, np.where(save_first == cur_element))
+
+            ind = np.where(save_first == cur_element)[0][0]
+
+            cur_element = other_chromosome.chromosome[ind]
+
+        for ind, chr in enumerate(other_chromosome.chromosome):
+            if ind not in visited:
+                self.chromosome[ind] = chr         
+
+        #self.chromosome[start_from:] = other_chromosome.chromosome[start_from:]
+
+        #self.chromosome[start_from:] = other_chromosome.chromosome[start_from:]
+        #other_chromosome.chromosome[start_from:] = save_first[start_from:]
+        #other_chromosome.chromosome[:start_from] = self.chromosome[:start_from]
     def mutate(self, p: float):
         # swapping genes mutation 
         """
