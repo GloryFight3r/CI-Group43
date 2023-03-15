@@ -70,7 +70,7 @@ class Maze:
         drop_value = q / len(walk_history)
         for i in range(1, len(coords)):
             self.pheromones_matrix[coords[i - 1]][coords[i]] += drop_value
-        print(self.pheromones_matrix)
+        #print(self.pheromones_matrix)
         return
 
      # Update pheromones for a list of routes
@@ -106,20 +106,22 @@ class Maze:
         E = position.add_direction(Direction.east)
         W = position.add_direction(Direction.west)
 
-        return {
-            Direction.north : get_pheromone(N),
-            Direction.south : get_pheromone(S),
-            Direction.east : get_pheromone(E),
-            Direction.west : get_pheromone(W),
-        }
+        return [
+            self.get_pheromone(position, N),
+            self.get_pheromone(position, S),
+            self.get_pheromone(position, E),
+            self.get_pheromone(position, W),
+        ]
 
     # Pheromone getter for a specific position. If the position is not in bounds returns 0
     # @param pos Position coordinate
     # @return pheromone at point
-    def get_pheromone(self, pos):
-        if not self.in_bounds(pos):
-            return 0
-        return self.get_surrounding_pheromone(pos)
+    def get_pheromone(self, position, dir):
+        pher = self.pheromones_matrix.get(position).get(dir)
+        if pher == None:
+            return 0 
+        else: 
+            return pher
 
     # Check whether a coordinate lies in the current maze.
     # @param position The position to be checked

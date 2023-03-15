@@ -1,5 +1,7 @@
 import random
 from Route import Route
+import numpy as np
+from Direction import Direction
 
 #Class that represents the ants functionality.
 class Ant:
@@ -18,4 +20,24 @@ class Ant:
     # @return The route the ant found through the maze.
     def find_route(self):
         route = Route(self.start)
+        visited = np.zeros((self.maze.width,self.maze.length))
+        dir = [Direction.north,Direction.south,Direction.east,Direction.west] 
+        while self.current_position != self.end:
+            visited[self.current_position.x][self.current_position.y] = 1 
+            pheromones = self.maze.get_surrounding_pheromone(self.current_position)
+
+            for j in range(4):
+                possible = self.current_position.add_direction(dir[j])
+                if self.maze.in_bounds(possible)==False or visited[possible.x][possible.y] == 1:
+                    pheromones[j] = 0 
+            sm = np.sum(pheromones,axis=None)            
+            if sm == 0:
+                route = Route(self.start) 
+                return route 
+
+            choice = random.choices(dir, weights = pheromones, k = 1)[0]
+            self.current_position = self.current_position.add_direction(choice)
+            print(self.current_position)
+            route.add(choice)
+            
         return route
