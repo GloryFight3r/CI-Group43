@@ -25,13 +25,15 @@ class Candidate:
         return return_array
         
     def calculate_fitness(self, tsp_data: TSPData):
-        prev_number = -1
-        cur_fitness = 0
-        for cur_number in self.decode():
-            if prev_number != -1:
-                cur_fitness += tsp_data.get_distances()[prev_number][cur_number]
-            prev_number = cur_number
-        return cur_fitness
+        product_order = self.decode()
+        total_length = tsp_data.start_distances[product_order[0]]
+        for i in range(len(product_order) - 1):
+            frm = product_order[i]
+            to = product_order[i + 1]
+            total_length += tsp_data.distances[frm][to]
+
+        total_length += tsp_data.end_distances[product_order[len(product_order) - 1]] + len(product_order)
+        return total_length
 
     def is_legal(self)->bool:
         data = self.decode()
@@ -64,7 +66,6 @@ class Candidate:
             for z in indeces:
                 newGene = newGene[:z] + ('1' if newGene[z] == '0' else '0') + newGene[z + 1:]
             self.chromosome[ind] = newGene
-        #print(self.chromosome)
         pass
 
 # TSP problem solver using genetic algorithms.
@@ -94,16 +95,12 @@ class GeneticAlgorithm:
         return fitness_array
 
     def pick_candidate(self, fitness_ratio, prob: float):
-        #print(fitness_ratio)
-        #print(np.where(fitness_ratio > prob)[0][0], prob)
         return np.where(fitness_ratio > prob)[0][0]
 
     def produce_offspring(self, population: list[Candidate], fitness_ratio: np.ndarray, c_p: float, m_p: float) -> list[Candidate]:
         fitness_ratio = list(np.ndenumerate(fitness_ratio))
         fitness_ratio_with_ind = sorted(fitness_ratio, key = lambda x : x[1])
         fitness_ratio = np.cumsum(np.array(list(map(lambda z : z[1], fitness_ratio_with_ind))))
-
-        #print(fitness_ratio)
 
         offspring = []
 
@@ -130,22 +127,25 @@ class GeneticAlgorithm:
     def solve_tsp(self, tsp_data: TSPData, cross_over_prob, mutation_prob):
         n_items = len(tsp_data.get_distances())
         # choose initial population
-        #print(n_items, int(np.log2(n_items)) + 1)
         population = self.encode_data(n_items, self.pop_size, int(np.log2(n_items)) + 1)
-        bst = 1000
-        for i in range(self.pop_size):
+        fitness = []
+        history = []
+        for i in range(self.generations):
             # make offspring
             # calculate fitness function for the current population
             fitness = self.calculate_fitness(population, tsp_data)
-            #print(fitness)
             max_value = np.max(fitness) + 0.001
             min_value = np.min(fitness)
     
             bst = min_value
-            
+            history.append(History(np.mean(fitness), max_value, min_value))
             fitness_ratio = ((max_value - fitness) / (max_value - min_value))
             fitness_ratio = fitness_ratio / np.sum(fitness_ratio)
-            #print(fitness_ratio)
             population = self.produce_offspring(population, fitness_ratio, cross_over_prob, mutation_prob)
-        print(bst)
-        return []
+        return (population[np.argmin(fitness)].decode(), history)
+
+class History:
+    def __init__(self, average, max, min):
+        self.average = average
+        self.max = max
+        self.min = min
