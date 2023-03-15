@@ -48,7 +48,7 @@ class Maze:
                     self.pheromones_matrix[position][W] = 1
 
         # debug print
-        print(self.pheromones_matrix)
+        #print(self.pheromones_matrix)
 
     # Reset the maze for a new shortest path problem.
     def reset(self):
@@ -59,13 +59,15 @@ class Maze:
     # @param Q Normalization factor for amount of dropped pheromone
     def add_pheromone_route(self, route, q):
         walk_history = route.get_route()
+        if(len(walk_history) == 0):
+            return 
         start = route.get_start()
         coords = []
-        print(coords)
+        #print(coords)
         coords.append(start)
         for i in range(len(walk_history)):
             coords.append(coords[-1].add_direction(walk_history[i]))
-        print(coords)
+        #print(coords)
 
         drop_value = q / len(walk_history)
         for i in range(1, len(coords)):

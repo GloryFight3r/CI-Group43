@@ -37,7 +37,6 @@ class Ant:
 
             choice = random.choices(dir, weights = pheromones, k = 1)[0]
             self.current_position = self.current_position.add_direction(choice)
-            print(self.current_position)
             route.add(choice)
             
         return route
