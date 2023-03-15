@@ -137,12 +137,14 @@ class GeneticAlgorithm:
     def pick_candidate(self, fitness_ratio, prob: float):
         return np.where(fitness_ratio > prob)[0][0]
 
-    def produce_offspring(self, population: list[Candidate], fitness_ratio: np.ndarray, c_p: float, m_p: float) -> list[Candidate]:
+    def produce_offspring(self, population: list[Candidate], fitness_ratio: np.ndarray, c_p: float, m_p: float, e_n: int) -> list[Candidate]:
         fitness_ratio = list(np.ndenumerate(fitness_ratio))
         fitness_ratio_with_ind = sorted(fitness_ratio, key = lambda x : x[1])
         fitness_ratio = np.cumsum(np.array(list(map(lambda z : z[1], fitness_ratio_with_ind))))
 
         offspring = []
+        for i in range(e_n):
+            offspring.append(population[fitness_ratio_with_ind[-(i + 1)][0][0]])
 
         while(len(offspring) < self.pop_size):
             first_ind = self.pick_candidate(fitness_ratio, np.random.rand())
@@ -162,7 +164,7 @@ class GeneticAlgorithm:
     # This method should solve the TSP.
     # @param pd the TSP data.
     # @return the optimized product sequence.
-    def solve_tsp(self, tsp_data: TSPData, cross_over_prob, mutation_prob):
+    def solve_tsp(self, tsp_data: TSPData, cross_over_prob, mutation_prob, elitism_n: int):
         n_items = len(tsp_data.get_distances())
         # choose initial population
         population = self.encode_data(n_items, self.pop_size, int(np.log2(n_items)) + 1)
@@ -179,12 +181,13 @@ class GeneticAlgorithm:
             history.append(History(np.mean(fitness), max_value, min_value))
 
             #fitness_ratio = 1 / fitness
-            #fitness_ratio = fitness_ratio / np.sum(fitness_ratio)
+            #fitness_ratio = (1 - (fitness / np.sum(fitness))) / (self.pop_size - 1)
             
             #print(fitness_ratio)
             fitness_ratio = ((max_value - fitness) / (max_value - min_value))
             fitness_ratio = fitness_ratio / np.sum(fitness_ratio)
-            population = self.produce_offspring(population, fitness_ratio, cross_over_prob, mutation_prob)
+            
+            population = self.produce_offspring(population, fitness_ratio, cross_over_prob, mutation_prob, elitism_n)
         return (population[np.argmin(fitness)].decode(), history)
 
 class History:
