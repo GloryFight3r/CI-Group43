@@ -49,24 +49,42 @@ class Candidate:
         new_cand = copy.deepcopy(self)
 
         if(cross_over_chance <= cross_over_prob):
-            new_cand.cross_over(other_chromosome)
+            oth_chrom = copy.deepcopy(other_chromosome)
+            new_cand.cross_over(oth_chrom)
+
+            oth_chrom.mutate(mutation_prob)
+            new_cand.mutate(mutation_prob)
+            return [new_cand, oth_chrom]
 
         new_cand.mutate(mutation_prob)
 
-        return new_cand
+        return [new_cand]
 
     def cross_over(self, other_chromosome):
         start_from = np.random.randint(len(self.chromosome))
 
         self.chromosome[start_from:] = other_chromosome.chromosome[start_from:]
+        other_chromosome.chromosome[:start_from] = self.chromosome[:start_from]
     def mutate(self, p: float):
-        for ind, gene in enumerate(self.chromosome):
-            indeces = np.where(np.random.rand(self.maxBit) <= p)[0]
-            newGene = gene
-            for z in indeces:
-                newGene = newGene[:z] + ('1' if newGene[z] == '0' else '0') + newGene[z + 1:]
-            self.chromosome[ind] = newGene
-        pass
+        # swapping genes mutation 
+        """
+        For every gene we mark it with probability p and then random shuffle all the marked ones
+        """
+        indeces = np.where(np.random.rand(len(self.chromosome)) <= p)[0]
+        cpy = copy.deepcopy(self.chromosome)
+        other_indeces = copy.deepcopy(indeces)
+
+        np.random.shuffle(other_indeces)
+        for ind, i in enumerate(indeces):
+            self.chromosome[i] = cpy[other_indeces[ind]]
+        
+        # flipping bit mutation
+        #for ind, gene in enumerate(self.chromosome):
+        #    indeces = np.where(np.random.rand(self.maxBit) <= p)[0]
+        #    newGene = gene
+        #    for z in indeces:
+        #        newGene = newGene[:z] + ('1' if newGene[z] == '0' else '0') + newGene[z + 1:]
+        #    self.chromosome[ind] = newGene
 
 # TSP problem solver using genetic algorithms.
 class GeneticAlgorithm:
@@ -104,22 +122,20 @@ class GeneticAlgorithm:
 
         offspring = []
 
-        for pop_to_produce in range(self.pop_size):
-            while True:
-                first_ind = self.pick_candidate(fitness_ratio, np.random.rand())
-                second_ind = self.pick_candidate(fitness_ratio, np.random.rand())
-                real_first_ind = fitness_ratio_with_ind[first_ind][0][0]
-                real_second_ind = fitness_ratio_with_ind[second_ind][0][0]
+        while(len(offspring) < self.pop_size):
+            first_ind = self.pick_candidate(fitness_ratio, np.random.rand())
+            second_ind = self.pick_candidate(fitness_ratio, np.random.rand())
+            real_first_ind = fitness_ratio_with_ind[first_ind][0][0]
+            real_second_ind = fitness_ratio_with_ind[second_ind][0][0]
                 
-                first_candidate:Candidate = population[real_first_ind]
-                second_candidate:Candidate = population[real_second_ind]
+            first_candidate:Candidate = population[real_first_ind]
+            second_candidate:Candidate = population[real_second_ind]
                 
-                new_offspring = first_candidate.produce_offspring(second_candidate, c_p, m_p)
-                if new_offspring.is_legal():
-                    offspring.append(new_offspring)
-                    break
+            for cnd in first_candidate.produce_offspring(second_candidate, c_p, m_p):
+                if cnd.is_legal():
+                    offspring.append(cnd)
 
-        return offspring
+        return offspring[:self.pop_size]
 
     # This method should solve the TSP.
     # @param pd the TSP data.
@@ -139,6 +155,11 @@ class GeneticAlgorithm:
     
             bst = min_value
             history.append(History(np.mean(fitness), max_value, min_value))
+
+            #fitness_ratio = 1 / fitness
+            #fitness_ratio = fitness_ratio / np.sum(fitness_ratio)
+            
+            #print(fitness_ratio)
             fitness_ratio = ((max_value - fitness) / (max_value - min_value))
             fitness_ratio = fitness_ratio / np.sum(fitness_ratio)
             population = self.produce_offspring(population, fitness_ratio, cross_over_prob, mutation_prob)
