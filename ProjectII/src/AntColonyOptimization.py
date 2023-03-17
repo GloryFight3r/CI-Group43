@@ -1,5 +1,5 @@
 import time
-from Maze import Maze
+from Maze import Coordinate, Maze
 from PathSpecification import PathSpecification
 from Ant import Ant
 import numpy as np 
@@ -32,6 +32,12 @@ class AntColonyOptimization:
         routes = [None] * self.ants_per_gen
         #print(self.maze, self.maze.width, self.maze.length)
         #print(self.maze.walls)
+        to_start = []
+        for i in range(self.maze.width):
+            for j in range(self.maze.length):
+                if self.maze.walls[i][j] == 1:
+                    to_start.append(Coordinate(j, i))
+        real_start = path_specification.start
         for gen in range(self.generations):
             shortestLen = self.maze.length*self.maze.width
             curAvgLen = 0
@@ -39,6 +45,9 @@ class AntColonyOptimization:
             pheromones = np.zeros(self.maze.width*self.maze.length*4)
 
             for x in range(self.ants_per_gen):
+                path_specification.start = to_start[np.random.randint(len(to_start))]
+                if gen > (self.generations * 9/10):
+                    path_specification.start = real_start
                 ant[x] = Ant(self.maze,path_specification)
                 rt = ant[x].find_route()
                 routes[x] = rt[0]
@@ -47,19 +56,14 @@ class AntColonyOptimization:
                 if sz!=0:
                     #print("DAS")
                     pheromones[locations] += self.q/(len(locations))  # update the pheromones for this route
-                    shortestLen = min(sz,shortestLen)
-                    if(sz == shortestLen):
-                        route = routes[x]
+                    if path_specification.start == real_start:
+                        shortestLen = min(sz,shortestLen)
+                        if(sz == shortestLen):
+                            route = routes[x]
 
-                    curAvgLen = curAvgLen + sz
-                    successful = successful + 1
-            if(successful == 0):
-                curAvgLen = self.maze.length * self.maze.width
-            else:
-                curAvgLen = curAvgLen/successful 
-            #print("DASS")
-            prevAvgLen = curAvgLen
-            # Could compare preAvgLen with curAvgLen for early stop 
+                    #curAvgLen = curAvgLen + sz
+                    #successful = successful + 1
             self.maze.evaporate(self.evaporation)
             self.maze.add_pheromone_routes(pheromones) 
+
         return route

@@ -18,12 +18,14 @@ class Ant:
 
     def calc_available_spaces(self, pos, visited):
         dir = [Direction.east,Direction.north,Direction.west,Direction.south]
-        possible_moves = 1
+        possible_moves = 0
         for j in range(4):
             possible = pos.add_direction(dir[j])
-            if  self.maze.in_bounds(possible) == True and self.maze.walls[possible.x][possible.y] == 1 and possible not in visited:
+            if possible in visited:
                 possible_moves += 1
-        return possible_moves / 4
+        if possible_moves > 1:
+            return 0
+        return 1
         
 
     # Method that performs a single run through the maze by the ant.
@@ -32,7 +34,6 @@ class Ant:
         route = Route(self.start)
         visited = {'a'}#np.zeros((self.maze.length,self.maze.width))
         dir = [Direction.east,Direction.north,Direction.west,Direction.south] 
-        negative_weight = 1
         while self.current_position != self.end:
             visited.add(self.current_position)
             #visited[self.current_position.y][self.current_position.x] = 1 
@@ -42,14 +43,14 @@ class Ant:
                 possible = self.current_position.add_direction(dir[j])
                 if  self.maze.in_bounds(possible) == False or self.maze.walls[possible.x][possible.y] == 0 or possible in visited:
                     pheromones[j] = 0 
-                #else:
-                #    pheromones[j] *= 1/possible.get_distance(self.end) #self.calc_available_spaces(possible, visited)
+                else:
+                    pheromones[j] *= self.calc_available_spaces(possible, visited)
 
             sm = np.sum(pheromones,axis=None)            
             if sm == 0:
-                route.remove_last()
-                break
-                #return [route,np.zeros(0, dtype='int')] 
+                route = Route(self.start)
+                #print("END")
+                return [route, np.zeros(0, dtype='int')] 
             
             #pheromones /= np.sum(pheromones)
 
@@ -62,4 +63,4 @@ class Ant:
         for i,pos in enumerate(route.get_route()) : 
             locations[i] = cur_pos.x*self.maze.width + cur_pos.y + Direction.dir_to_int(pos)
             cur_pos = cur_pos.add_direction(pos)
-        return [route,locations, negative_weight]
+        return [route,locations]
