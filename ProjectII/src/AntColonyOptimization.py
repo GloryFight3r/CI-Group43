@@ -2,6 +2,7 @@ import time
 from Maze import Maze
 from PathSpecification import PathSpecification
 from Ant import Ant
+import numpy as np 
 
 # Class representing the first assignment. Finds shortest path between two points in a maze according to a specific
 # path specification.
@@ -27,17 +28,22 @@ class AntColonyOptimization:
         self.maze.reset()
         prevAvgLen = self.maze.length*self.maze.width
         route = None 
+        ant = [None] * self.ants_per_gen
+        routes = [None] * self.ants_per_gen
         for gen in range(self.generations):
             shortestLen = self.maze.length*self.maze.width
             curAvgLen = 0
             successful = 0
-            ant = [None] * self.ants_per_gen
-            routes = [None] * self.ants_per_gen
+            pheromones = np.zeros(self.maze.width*self.maze.length*4)
+
             for x in range(self.ants_per_gen):
                 ant[x] = Ant(self.maze,path_specification)
-                routes[x] = ant[x].find_route()
+                rt = ant[x].find_route()
+                routes[x] = rt[0]
+                locations = rt[1]
                 sz = routes[x].size()
                 if sz!=0:
+                    pheromones[locations] += self.q/len(locations)  # update the pheromones for this route
                     shortestLen = min(sz,shortestLen)
                     if(sz == shortestLen):
                         route = routes[x]
@@ -48,8 +54,9 @@ class AntColonyOptimization:
                 curAvgLen = self.maze.length * self.maze.width
             else:
                 curAvgLen = curAvgLen/successful 
+
             prevAvgLen = curAvgLen
             # Could compare preAvgLen with curAvgLen for early stop 
             self.maze.evaporate(self.evaporation)
-            self.maze.add_pheromone_routes(routes, self.q) 
+            self.maze.add_pheromone_routes(pheromones) 
         return route
