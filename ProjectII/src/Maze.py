@@ -36,7 +36,6 @@ class Maze:
     # @param r The route of the ants
     # @param Q Normalization factor for amount of dropped pheromone
     def add_pheromone_route(self, locations, q):
-        
         #print(self.pheromones_matrix)
         pass
 

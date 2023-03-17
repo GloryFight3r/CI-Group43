@@ -45,7 +45,8 @@ class AntColonyOptimization:
                 locations = rt[1]
                 sz = routes[x].size()
                 if sz!=0:
-                    pheromones[locations] += self.q/len(locations)  # update the pheromones for this route
+                    #print("DAS")
+                    pheromones[locations] += self.q/(len(locations))  # update the pheromones for this route
                     shortestLen = min(sz,shortestLen)
                     if(sz == shortestLen):
                         route = routes[x]
@@ -56,7 +57,7 @@ class AntColonyOptimization:
                 curAvgLen = self.maze.length * self.maze.width
             else:
                 curAvgLen = curAvgLen/successful 
-
+            #print("DASS")
             prevAvgLen = curAvgLen
             # Could compare preAvgLen with curAvgLen for early stop 
             self.maze.evaporate(self.evaporation)
