@@ -43,6 +43,6 @@ class Ant:
 
         cur_pos = self.start 
         for i,pos in enumerate(route.get_route()) : 
-            locations[i] = cur_pos.y*self.maze.width + cur_pos.x + Direction.dir_to_int(pos)
+            locations[i] = cur_pos.x*self.maze.width + cur_pos.y + Direction.dir_to_int(pos)
             cur_pos = cur_pos.add_direction(pos)
         return [route,locations]
