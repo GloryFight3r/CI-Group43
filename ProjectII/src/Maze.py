@@ -3,6 +3,7 @@ import sys
 from Coordinate import Coordinate
 from Direction import Direction
 import numpy as np
+import copy
 
 # Class that holds all the maze data. This means the pheromones, the open and blocked tiles in the system as
 # well as the starting and end coordinates.
@@ -65,7 +66,7 @@ class Maze:
     # @return the pheromones of the neighbouring positions.
     def get_surrounding_pheromone(self, position):
 
-        return self.pheromones_matrix[position.x*self.width+position.y:][:4]
+        return copy.deepcopy(self.pheromones_matrix[position.y*self.width+position.x:][:4])
 
     # Pheromone getter for a specific position. If the position is not in bounds returns 0
     # @param pos Position coordinate

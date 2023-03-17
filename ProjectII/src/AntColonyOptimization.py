@@ -30,6 +30,8 @@ class AntColonyOptimization:
         route = None 
         ant = [None] * self.ants_per_gen
         routes = [None] * self.ants_per_gen
+        #print(self.maze, self.maze.width, self.maze.length)
+        #print(self.maze.walls)
         for gen in range(self.generations):
             shortestLen = self.maze.length*self.maze.width
             curAvgLen = 0

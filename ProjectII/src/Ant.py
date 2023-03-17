@@ -20,15 +20,17 @@ class Ant:
     # @return The route the ant found through the maze.
     def find_route(self):
         route = Route(self.start)
-        visited = np.zeros((self.maze.width,self.maze.length))
+        visited = np.zeros((self.maze.length,self.maze.width))
         dir = [Direction.east,Direction.north,Direction.west,Direction.south] 
         while self.current_position != self.end:
-            visited[self.current_position.x][self.current_position.y] = 1 
+            visited[self.current_position.y][self.current_position.x] = 1 
             pheromones = self.maze.get_surrounding_pheromone(self.current_position)
+
             for j in range(4):
                 possible = self.current_position.add_direction(dir[j])
-                if self.maze.walls[possible.x][possible.y] == 0 or self.maze.in_bounds(possible) == False or visited[possible.x][possible.y] == 1:
+                if  self.maze.in_bounds(possible) == False or self.maze.walls[possible.x][possible.y] == 0 or visited[possible.y][possible.x] == 1:
                     pheromones[j] = 0 
+
             sm = np.sum(pheromones,axis=None)            
             if sm == 0:
                 route = Route(self.start) 
@@ -37,12 +39,10 @@ class Ant:
             choice = random.choices(dir, weights = pheromones, k = 1)[0]
             self.current_position = self.current_position.add_direction(choice)
             route.add(choice)
-        
         locations = np.zeros(route.size(), dtype='int')
-        #print(locations)
-        #print("DASDSA")
+
         cur_pos = self.start 
         for i,pos in enumerate(route.get_route()) : 
-            locations[i] = cur_pos.x*self.maze.width + cur_pos.y + Direction.dir_to_int(pos)
+            locations[i] = cur_pos.y*self.maze.width + cur_pos.x + Direction.dir_to_int(pos)
             cur_pos = cur_pos.add_direction(pos)
         return [route,locations]
