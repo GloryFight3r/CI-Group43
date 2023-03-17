@@ -177,14 +177,13 @@ class GeneticAlgorithm:
             max_value = np.max(fitness) + 0.001
             min_value = np.min(fitness)
     
-            bst = min_value
             history.append(History(np.mean(fitness), max_value, min_value))
 
             #fitness_ratio = 1 / fitness
             #fitness_ratio = (1 - (fitness / np.sum(fitness))) / (self.pop_size - 1)
             
             #print(fitness_ratio)
-            fitness_ratio = ((max_value - fitness) / (max_value - min_value))
+            fitness_ratio = (max_value - fitness) #/ (max_value - min_value))
             fitness_ratio = fitness_ratio / np.sum(fitness_ratio)
             
             population = self.produce_offspring(population, fitness_ratio, cross_over_prob, mutation_prob, elitism_n)
