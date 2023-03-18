@@ -30,7 +30,7 @@ class Ant:
 
     # Method that performs a single run through the maze by the ant.
     # @return The route the ant found through the maze.
-    def find_route(self, alpha: float, beta: float, dead_bodies : set):#, dead_trail: np.ndarray):
+    def find_route(self, alpha: float, beta: float, dead_trail: np.ndarray):
         route = Route(self.start)
         visited = {'a'}#np.zeros((self.maze.length,self.maze.width))
         dir = [Direction.east,Direction.north,Direction.west,Direction.south] 
@@ -43,23 +43,23 @@ class Ant:
             #cur_pos_to_ind = self.current_position.x*self.maze.width+self.current_position.y
             for j in range(4):
                 possible = self.current_position.add_direction(dir[j])
-                if  self.maze.in_bounds(possible) == False or possible in dead_bodies or self.maze.walls[possible.x][possible.y] == 0 or possible in visited:
+                if  self.maze.in_bounds(possible) == False or self.maze.walls[possible.x][possible.y] == 0 or possible in visited:
                     pheromones[j] = 0 
                 else:
                     #print(possible, self.maze.in_bounds(possible))
-                    #pheromones[j] = dead_trail[possible.y * self.maze.width + possible.x] * ((pheromones[j] ** alpha)) * ((1 / possible.get_distance(self.end)) ** beta)
-                    pheromones[j] = ((pheromones[j] ** alpha)) * ((1 / possible.get_distance(self.end)) ** beta)
+                    pheromones[j] = dead_trail[possible.y * self.maze.width + possible.x] * ((pheromones[j] ** alpha)) * ((1 / possible.get_distance(self.end)) ** beta)
+                    #pheromones[j] = ((pheromones[j] ** alpha)) * ((1 / possible.get_distance(self.end)) ** beta)
 
             sm = np.sum(pheromones,axis=None)            
             if sm == 0:
                 #route = Route(self.start)
                 #print("END")
                 #dead_trail[self.current_position.y*self.maze.width+self.current_position.x] = 0
-                dead_bodies.add(self.current_position)
+                #dead_bodies.add(self.current_position)
                 dead = True
-                return [route, np.zeros(0), True]
-                #route.add(dir[0])
-                #break
+                #return [route, np.zeros(0), True]
+                route.add(dir[0])
+                break
             
             pheromones /= np.sum(pheromones)
 
