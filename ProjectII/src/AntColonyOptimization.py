@@ -39,7 +39,8 @@ class AntColonyOptimization:
         real_start = path_specification.start
         for gen in range(self.generations):
             shortestLen = self.maze.length*self.maze.width
-            pheromones = np.zeros(self.maze.width*self.maze.length*4)
+            pheromones = np.zeros(self.maze.width*(self.maze.length*4))
+            #dead_trail = np.ones(self.maze.width*self.maze.length)
             dead_bodies = set()
 
             for x in range(self.ants_per_gen):
@@ -48,16 +49,20 @@ class AntColonyOptimization:
                     if gen > (self.generations * 9/10):
                         path_specification.start = real_start
                 ant = Ant(self.maze,path_specification)
-                rt = ant.find_route(alpha, beta, dead_bodies)
+                rt = ant.find_route(alpha, beta, dead_bodies)#, dead_trail)
                 routes = rt[0]
                 locations = rt[1]
+                is_dead = rt[2]
                 sz = routes.size()
-                if sz!=0:
+                if not is_dead:
                     pheromones[locations] += self.q/(len(locations))  # update the pheromones for this route
                     if path_specification.start == real_start:
                         shortestLen = min(sz,shortestLen)
                         if(sz == shortestLen):
-                            route = routes[x]
+                            route = routes
+                #else:
+                    #print(locations)
+                    #dead_trail[locations[-1]] = np.minimum(dead_trail[locations[-1]], 0)#np.linspace(1, 0, len(locations) )[:len(locations)])
             self.maze.evaporate(self.evaporation)
             self.maze.add_pheromone_routes(pheromones) 
 

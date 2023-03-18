@@ -24,7 +24,7 @@ class Maze:
 
     # Initialize pheromones to a start value.
     def initialize_pheromones(self):
-        self.pheromones_matrix = np.ones(self.width*self.length*4)
+        self.pheromones_matrix = np.ones(self.width*(self.length*4))
         # debug print
         #print(self.pheromones_matrix)
 
@@ -65,7 +65,7 @@ class Maze:
     # @return the pheromones of the neighbouring positions.
     def get_surrounding_pheromone(self, position):
 
-        return copy.deepcopy(self.pheromones_matrix[position.x*self.width+position.y:][:4])
+        return copy.deepcopy(self.pheromones_matrix[position.y*self.width+(4*position.x):][:4])
 
     # Pheromone getter for a specific position. If the position is not in bounds returns 0
     # @param pos Position coordinate
