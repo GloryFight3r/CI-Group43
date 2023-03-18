@@ -24,45 +24,40 @@ class AntColonyOptimization:
      # Loop that starts the shortest path process
      # @param spec Spefication of the route we wish to optimize
      # @return ACO optimized route
-    def find_shortest_route(self, path_specification, alpha: float, beta: float):
+    def find_shortest_route(self, path_specification, alpha: float, beta: float, random_start: bool):
         self.maze.reset()
-        prevAvgLen = self.maze.length*self.maze.width
         route = None 
-        ant = [None] * self.ants_per_gen
-        routes = [None] * self.ants_per_gen
-        #print(self.maze, self.maze.width, self.maze.length)
-        #print(self.maze.walls)
+        ant = None
+        routes = None
+
         to_start = []
         for i in range(self.maze.width):
             for j in range(self.maze.length):
                 if self.maze.walls[i][j] == 1:
                     to_start.append(Coordinate(j, i))
+
         real_start = path_specification.start
         for gen in range(self.generations):
             shortestLen = self.maze.length*self.maze.width
-            curAvgLen = 0
-            successful = 0
             pheromones = np.zeros(self.maze.width*self.maze.length*4)
+            dead_bodies = set()
 
             for x in range(self.ants_per_gen):
-                path_specification.start = to_start[np.random.randint(len(to_start))]
-                if gen > (self.generations * 9/10):
-                    path_specification.start = real_start
-                ant[x] = Ant(self.maze,path_specification)
-                rt = ant[x].find_route(alpha, beta)
-                routes[x] = rt[0]
+                if random_start:
+                    path_specification.start = to_start[np.random.randint(len(to_start))]
+                    if gen > (self.generations * 9/10):
+                        path_specification.start = real_start
+                ant = Ant(self.maze,path_specification)
+                rt = ant.find_route(alpha, beta, dead_bodies)
+                routes = rt[0]
                 locations = rt[1]
-                sz = routes[x].size()
+                sz = routes.size()
                 if sz!=0:
-                    #print("DAS")
                     pheromones[locations] += self.q/(len(locations))  # update the pheromones for this route
                     if path_specification.start == real_start:
                         shortestLen = min(sz,shortestLen)
                         if(sz == shortestLen):
                             route = routes[x]
-
-                    #curAvgLen = curAvgLen + sz
-                    #successful = successful + 1
             self.maze.evaporate(self.evaporation)
             self.maze.add_pheromone_routes(pheromones) 
 
