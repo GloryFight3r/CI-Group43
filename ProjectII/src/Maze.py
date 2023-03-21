@@ -3,6 +3,7 @@ import sys
 from Coordinate import Coordinate
 from Direction import Direction
 import numpy as np
+import matplotlib.pyplot as plt
 import copy
 
 # Class that holds all the maze data. This means the pheromones, the open and blocked tiles in the system as
@@ -126,3 +127,33 @@ class Maze:
             print("Error reading maze file " + file_path)
             traceback.print_exc()
             sys.exit()
+
+    def visualize(self, route):
+        matrix = (np.asarray(self.walls) ^ 1) * 100
+        
+        walk_history = route.get_route()
+        if(len(walk_history) == 0):
+            return 
+        start = route.get_start()
+        coords = []
+        #print(coords)
+        coords.append(start)
+        for i in range(len(walk_history)):
+            coords.append(coords[-1].add_direction(walk_history[i]))
+        #print(coords)
+
+        for i in range(len(coords)):
+            matrix[coords[i].x][coords[i].y] += 20
+
+        matrix = matrix.T
+
+        print(matrix)
+	
+        fig, ax = plt.subplots(figsize=(7.5, 7.5))
+        ax.matshow(matrix, cmap=plt.cm.Reds, alpha=0.3)
+        for i in range(matrix.shape[0]):
+            for j in range(matrix.shape[1]):
+                ax.text(x=j, y=i,s="", va='center', ha='center', size='xx-large')
+        
+        plt.title('Maze and path', fontsize=18)
+        plt.show()
