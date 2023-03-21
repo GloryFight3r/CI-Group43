@@ -26,10 +26,10 @@ class TSPData:
     # Calculate the routes from the product locations to each other, the start, and the end.
     # Additionally generate arrays that contain the length of all the routes.
     # @param maze
-    def calculate_routes(self, aco):
-        self.product_to_product = self.build_distance_matrix(aco)
-        self.start_to_product = self.build_start_to_products(aco)
-        self.product_to_end = self.build_products_to_end(aco)
+    def calculate_routes(self, aco, alpha, random_start, toxic_start, convergence, alpha_ants):
+        self.product_to_product = self.build_distance_matrix(aco, alpha, random_start, toxic_start, convergence, alpha_ants)
+        self.start_to_product = self.build_start_to_products(aco, alpha, random_start, toxic_start, convergence, alpha_ants)
+        self.product_to_end = self.build_products_to_end(aco, alpha, random_start, toxic_start, convergence, alpha_ants)
         self.build_distance_lists()
         return
 
@@ -116,7 +116,7 @@ class TSPData:
     # Calculate the optimal routes between all the individual routes
     # @param maze Maze to calculate optimal routes in
     # @return Optimal routes between all products in 2d array
-    def build_distance_matrix(self, aco):
+    def build_distance_matrix(self, aco, alpha, random_start, toxic_start, convergence, alpha_ants):
         number_of_product = len(self.product_locations)
         product_to_product = []
         for i in range(number_of_product):
@@ -124,28 +124,28 @@ class TSPData:
             for j in range(number_of_product):
                 start = self.product_locations[i]
                 end = self.product_locations[j]
-                product_to_product[i].append(aco.find_shortest_route(PathSpecification(start, end)))
+                product_to_product[i].append(aco.find_shortest_route(PathSpecification(start, end), alpha=alpha, random_start=random_start, toxic_start=toxic_start, convergence=convergence, alpha_ants=alpha_ants)[0])
         return product_to_product
 
 
     # Calculate optimal route between the start and all the products
     # @param maze Maze to calculate optimal routes in
     # @return Optimal route from start to products
-    def build_start_to_products(self, aco):
+    def build_start_to_products(self, aco, alpha, random_start, toxic_start, convergence, alpha_ants):
         start = self.spec.get_start()
         start_to_products = []
         for i in range(len(self.product_locations)):
-            start_to_products.append(aco.find_shortest_route(PathSpecification(start, self.product_locations[i])))
+            start_to_products.append(aco.find_shortest_route(PathSpecification(start, self.product_locations[i]), alpha=alpha, random_start=random_start, toxic_start=toxic_start, convergence=convergence, alpha_ants=alpha_ants)[0])
         return start_to_products
 
     # Calculate optimal routes between the products and the end point
     # @param maze Maze to calculate optimal routes in
     # @return Optimal route from products to end
-    def build_products_to_end(self, aco):
+    def build_products_to_end(self, aco, alpha, random_start, toxic_start, convergence, alpha_ants):
         end = self.spec.get_end()
         products_to_end = []
         for i in range(len(self.product_locations)):
-            products_to_end.append(aco.find_shortest_route(PathSpecification(self.product_locations[i], end)))
+            products_to_end.append(aco.find_shortest_route(PathSpecification(self.product_locations[i], end), alpha=alpha, random_start=random_start, toxic_start=toxic_start, convergence=convergence, alpha_ants=alpha_ants)[0])
         return products_to_end
 
     # Load TSP data from a file

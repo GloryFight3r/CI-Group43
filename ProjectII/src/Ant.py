@@ -44,7 +44,6 @@ class Ant:
                     pheromones[j] = 0 
                 else:
                     pheromones[j] = dead_trail[possible.y * self.maze.width + possible.x] * ((pheromones[j] ** alpha))
-                    #pheromones[j] = ((pheromones[j] ** alpha)) * ((1 / possible.get_distance(self.end)) ** beta)
 
             sm = np.sum(pheromones,axis=None)            
             if sm == 0:

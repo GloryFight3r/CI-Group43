@@ -77,6 +77,8 @@ class AntColonyOptimization:
             results = sorted(results, key=lambda tup : tup[0])
 
             for ind, cur_result in enumerate(results):
+                if cur_result[0] == 0:
+                    continue
                 if ind < len(results) * alpha_ants[0]:
                     pheromones[cur_result[1]] += (self.q / (cur_result[0])) * alpha_ants[1]
                 else:
