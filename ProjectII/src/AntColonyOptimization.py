@@ -24,7 +24,7 @@ class AntColonyOptimization:
      # Loop that starts the shortest path process
      # @param spec Spefication of the route we wish to optimize
      # @return ACO optimized route
-    def find_shortest_route(self, path_specification, alpha: float, beta: float, random_start: bool):
+    def find_shortest_route(self, path_specification, alpha: float, beta: float, random_start: bool, toxic_start: float):
         self.maze.reset()
         route = None 
         ant = None
@@ -41,7 +41,6 @@ class AntColonyOptimization:
             shortestLen = self.maze.length*self.maze.width
             pheromones = np.zeros(self.maze.width*(self.maze.length*4))
             dead_trail = np.ones(self.maze.width*self.maze.length)
-            #dead_bodies = set()
 
             for x in range(self.ants_per_gen):
                 if random_start:
@@ -60,9 +59,9 @@ class AntColonyOptimization:
                         shortestLen = min(sz,shortestLen)
                         if(sz == shortestLen):
                             route = routes
-                else:
+                elif gen < int(self.generations * toxic_start):
                     #print(locations)
-                    dead_trail[locations] = np.minimum(dead_trail[locations], np.linspace(1, 0, len(locations) )[:len(locations)])
+                    dead_trail[locations] = np.minimum(dead_trail[locations], np.linspace(1, 0, len(locations)))
             self.maze.evaporate(self.evaporation)
             self.maze.add_pheromone_routes(pheromones) 
 

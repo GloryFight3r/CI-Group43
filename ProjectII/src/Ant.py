@@ -37,27 +37,18 @@ class Ant:
         dead = False
         while self.current_position != self.end:
             visited.add(self.current_position)
-            #visited[self.current_position.y][self.current_position.x] = 1 
             pheromones = self.maze.get_surrounding_pheromone(self.current_position)
-            #print(self.current_position)
-            #cur_pos_to_ind = self.current_position.x*self.maze.width+self.current_position.y
             for j in range(4):
                 possible = self.current_position.add_direction(dir[j])
                 if  self.maze.in_bounds(possible) == False or self.maze.walls[possible.x][possible.y] == 0 or possible in visited:
                     pheromones[j] = 0 
                 else:
-                    #print(possible, self.maze.in_bounds(possible))
                     pheromones[j] = dead_trail[possible.y * self.maze.width + possible.x] * ((pheromones[j] ** alpha)) * ((1 / possible.get_distance(self.end)) ** beta)
                     #pheromones[j] = ((pheromones[j] ** alpha)) * ((1 / possible.get_distance(self.end)) ** beta)
 
             sm = np.sum(pheromones,axis=None)            
             if sm == 0:
-                #route = Route(self.start)
-                #print("END")
-                #dead_trail[self.current_position.y*self.maze.width+self.current_position.x] = 0
-                #dead_bodies.add(self.current_position)
                 dead = True
-                #return [route, np.zeros(0), True]
                 route.add(dir[0])
                 break
             
@@ -67,7 +58,6 @@ class Ant:
             self.current_position = self.current_position.add_direction(choice)
             route.add(choice)
         locations = np.zeros(route.size(), dtype='int')
-        #print("END2")
         cur_pos = self.start 
         for i,pos in enumerate(route.get_route()) : 
             if not dead:
