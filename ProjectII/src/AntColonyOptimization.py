@@ -25,7 +25,7 @@ class AntColonyOptimization:
      # Loop that starts the shortest path process
      # @param spec Spefication of the route we wish to optimize
      # @return ACO optimized route
-    def find_shortest_route(self, path_specification, alpha: float, beta: float, random_start: float, toxic_start: float, convergence: int, alpha_ants):
+    def find_shortest_route(self, path_specification, alpha: float, random_start: float, toxic_start: float, convergence: int, alpha_ants):
         self.maze.reset()
         route = None 
         ant = None
@@ -35,7 +35,7 @@ class AntColonyOptimization:
         for i in range(self.maze.width):
             for j in range(self.maze.length):
                 if self.maze.walls[i][j] == 1:
-                    to_start.append(Coordinate(j, i))
+                    to_start.append(Coordinate(i, j))
 
         real_start = path_specification.start
         prevShortestLen = self.maze.length * self.maze.width
@@ -58,7 +58,7 @@ class AntColonyOptimization:
                     path_specification.start = real_start
 
                 ant = Ant(self.maze,path_specification)
-                rt = ant.find_route(alpha, beta, dead_trail)
+                rt = ant.find_route(alpha, dead_trail)
                 routes = rt[0]
                 locations = rt[1]
                 is_dead = rt[2]
@@ -79,11 +79,12 @@ class AntColonyOptimization:
             for ind, cur_result in enumerate(results):
                 if ind < len(results) * alpha_ants[0]:
                     pheromones[cur_result[1]] += (self.q / (cur_result[0])) * alpha_ants[1]
+                else:
+                    pheromones[cur_result[1]] += (self.q / (cur_result[0]))
 
-            if gen % convergence == 0:
-                if shortestLen == prevShortestLen:
+            if gen >= convergence:
+                if shortestLen == colonyHistory.get_shortest_by_gen(gen - convergence):
                     break
-                prevShortestLen = shortestLen
             self.maze.evaporate(self.evaporation)
             self.maze.add_pheromone_routes(pheromones) 
 

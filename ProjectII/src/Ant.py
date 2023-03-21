@@ -30,7 +30,7 @@ class Ant:
 
     # Method that performs a single run through the maze by the ant.
     # @return The route the ant found through the maze.
-    def find_route(self, alpha: float, beta: float, dead_trail: np.ndarray):
+    def find_route(self, alpha: float, dead_trail: np.ndarray):
         route = Route(self.start)
         visited = {'a'}#np.zeros((self.maze.length,self.maze.width))
         dir = [Direction.east,Direction.north,Direction.west,Direction.south] 
@@ -43,7 +43,7 @@ class Ant:
                 if  self.maze.in_bounds(possible) == False or self.maze.walls[possible.x][possible.y] == 0 or possible in visited:
                     pheromones[j] = 0 
                 else:
-                    pheromones[j] = dead_trail[possible.y * self.maze.width + possible.x] * ((pheromones[j] ** alpha)) * ((1 / possible.get_distance(self.end)) ** beta)
+                    pheromones[j] = dead_trail[possible.y * self.maze.width + possible.x] * ((pheromones[j] ** alpha))
                     #pheromones[j] = ((pheromones[j] ** alpha)) * ((1 / possible.get_distance(self.end)) ** beta)
 
             sm = np.sum(pheromones,axis=None)            

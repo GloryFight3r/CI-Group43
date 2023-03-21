@@ -9,3 +9,6 @@ class AntColonyHistory:
     def append_record(self, gen:int, shortest_length: int, success_percentage: float):
         self.shortest[gen] = shortest_length
         self.success[gen] = success_percentage
+    
+    def get_shortest_by_gen(self, gen):
+        return self.shortest[gen]
