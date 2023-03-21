@@ -64,8 +64,7 @@ class Maze:
     # @param position The position to check the neighbours of.
     # @return the pheromones of the neighbouring positions.
     def get_surrounding_pheromone(self, position):
-
-        return copy.deepcopy(self.pheromones_matrix[position.y*self.width+(4*position.x):][:4])
+        return copy.deepcopy(self.pheromones_matrix[4*(position.y*self.width+position.x):][:4])
 
     # Pheromone getter for a specific position. If the position is not in bounds returns 0
     # @param pos Position coordinate
