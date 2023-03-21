@@ -3,6 +3,8 @@ import sys
 from Coordinate import Coordinate
 from Direction import Direction
 import numpy as np
+import matplotlib.pyplot as plt
+import copy
 
 # Class that holds all the maze data. This means the pheromones, the open and blocked tiles in the system as
 # well as the starting and end coordinates.
@@ -23,30 +25,7 @@ class Maze:
 
     # Initialize pheromones to a start value.
     def initialize_pheromones(self):
-        self.pheromones_matrix = dict()
-        for i in range(self.width):
-            for j in range(self.length):
-                position = Coordinate(i, j)
-                if self.walls[position.get_x()][position.get_y()] == 0:
-                    continue
-                self.pheromones_matrix[position] = dict()
-
-                N = position.add_direction(Direction.north)
-                if self.in_bounds(N) and self.walls[N.get_x()][N.get_y()] == 1:
-                    self.pheromones_matrix[position][N] = 1
-
-                S = position.add_direction(Direction.south)
-                if self.in_bounds(S) and self.walls[S.get_x()][S.get_y()] == 1:
-                    self.pheromones_matrix[position][S] = 1
-
-                E = position.add_direction(Direction.east)
-                if self.in_bounds(E) and self.walls[E.get_x()][E.get_y()] == 1:
-                    self.pheromones_matrix[position][E] = 1
-
-                W = position.add_direction(Direction.west)
-                if self.in_bounds(W) and self.walls[W.get_x()][W.get_y()] == 1:
-                    self.pheromones_matrix[position][W] = 1
-
+        self.pheromones_matrix = np.ones(self.width*(self.length*4))
         # debug print
         #print(self.pheromones_matrix)
 
@@ -57,37 +36,20 @@ class Maze:
     # Update the pheromones along a certain route according to a certain Q
     # @param r The route of the ants
     # @param Q Normalization factor for amount of dropped pheromone
-    def add_pheromone_route(self, route, q):
-        walk_history = route.get_route()
-        if(len(walk_history) == 0):
-            return 
-        start = route.get_start()
-        coords = []
-        #print(coords)
-        coords.append(start)
-        for i in range(len(walk_history)):
-            coords.append(coords[-1].add_direction(walk_history[i]))
-        #print(coords)
-
-        drop_value = q / len(walk_history)
-        for i in range(1, len(coords)):
-            self.pheromones_matrix[coords[i - 1]][coords[i]] += drop_value
+    def add_pheromone_route(self, locations, q):
         #print(self.pheromones_matrix)
-        return
+        pass
 
      # Update pheromones for a list of routes
      # @param routes A list of routes
      # @param Q Normalization factor for amount of dropped pheromone
-    def add_pheromone_routes(self, routes, q):
-        for r in routes:
-            self.add_pheromone_route(r, q)
+    def add_pheromone_routes(self, pheromones):
+        self.pheromones_matrix += pheromones
 
     # Evaporate pheromone
     # @param rho evaporation factor
     def evaporate(self, rho):
-        for key_cord in self.pheromones_matrix:
-            for entry_cord in self.pheromones_matrix[key_cord]:
-                self.pheromones_matrix[key_cord][entry_cord] *= (1 - rho)
+        self.pheromones_matrix*=(1-rho)
 
     # Width getter
     # @return width of the maze
@@ -103,17 +65,7 @@ class Maze:
     # @param position The position to check the neighbours of.
     # @return the pheromones of the neighbouring positions.
     def get_surrounding_pheromone(self, position):
-        N = position.add_direction(Direction.north)
-        S = position.add_direction(Direction.south)
-        E = position.add_direction(Direction.east)
-        W = position.add_direction(Direction.west)
-
-        return [
-            self.get_pheromone(position, N),
-            self.get_pheromone(position, S),
-            self.get_pheromone(position, E),
-            self.get_pheromone(position, W),
-        ]
+        return copy.deepcopy(self.pheromones_matrix[4*(position.y*self.width+position.x):][:4])
 
     # Pheromone getter for a specific position. If the position is not in bounds returns 0
     # @param pos Position coordinate
@@ -175,3 +127,33 @@ class Maze:
             print("Error reading maze file " + file_path)
             traceback.print_exc()
             sys.exit()
+
+    def visualize(self, route):
+        matrix = (np.asarray(self.walls) ^ 1) * 100
+        
+        walk_history = route.get_route()
+        if(len(walk_history) == 0):
+            return 
+        start = route.get_start()
+        coords = []
+        #print(coords)
+        coords.append(start)
+        for i in range(len(walk_history)):
+            coords.append(coords[-1].add_direction(walk_history[i]))
+        #print(coords)
+
+        for i in range(len(coords)):
+            matrix[coords[i].x][coords[i].y] += 20
+
+        matrix = matrix.T
+
+        print(matrix)
+	
+        fig, ax = plt.subplots(figsize=(7.5, 7.5))
+        ax.matshow(matrix, cmap=plt.cm.Reds, alpha=0.3)
+        for i in range(matrix.shape[0]):
+            for j in range(matrix.shape[1]):
+                ax.text(x=j, y=i,s="", va='center', ha='center', size='xx-large')
+        
+        plt.title('Maze and path', fontsize=18)
+        plt.show()
