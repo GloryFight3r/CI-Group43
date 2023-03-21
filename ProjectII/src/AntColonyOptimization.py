@@ -25,7 +25,7 @@ class AntColonyOptimization:
      # Loop that starts the shortest path process
      # @param spec Spefication of the route we wish to optimize
      # @return ACO optimized route
-    def find_shortest_route(self, path_specification, alpha: float, beta: float, random_start: float, toxic_start: float, convergence: int):
+    def find_shortest_route(self, path_specification, alpha: float, beta: float, random_start: float, toxic_start: float, convergence: int, alpha_ants):
         self.maze.reset()
         route = None 
         ant = None
@@ -41,12 +41,14 @@ class AntColonyOptimization:
         prevShortestLen = self.maze.length * self.maze.width
     
         colonyHistory = AntColonyHistory(self.generations)
+        shortestLen = self.maze.length*self.maze.width
 
         for gen in range(self.generations):
-            shortestLen = self.maze.length*self.maze.width
             pheromones = np.zeros(self.maze.width*(self.maze.length*4))
             dead_trail = np.ones(self.maze.width*self.maze.length)
             successful_ends = 0
+
+            results = []
 
             for x in range(self.ants_per_gen):
                 # ants start at random
@@ -62,7 +64,8 @@ class AntColonyOptimization:
                 is_dead = rt[2]
                 sz = routes.size()
                 if not is_dead:
-                    pheromones[locations] += self.q/(len(locations))  # update the pheromones for this route
+                    results.append((len(locations), locations))
+                    #pheromones[locations] += self.q / (len(locations))  # update the pheromones for this route
                     if path_specification.start == real_start:
                         shortestLen = min(sz,shortestLen)
                         successful_ends += 1
@@ -70,6 +73,12 @@ class AntColonyOptimization:
                             route = routes
                 elif gen < int(self.generations * toxic_start):
                     dead_trail[locations] = np.minimum(dead_trail[locations], np.linspace(1, 0, len(locations)))
+
+            results = sorted(results, key=lambda tup : tup[0])
+
+            for ind, cur_result in enumerate(results):
+                if ind < len(results) * alpha_ants[0]:
+                    pheromones[cur_result[1]] += (self.q / (cur_result[0])) * alpha_ants[1]
 
             if gen % convergence == 0:
                 if shortestLen == prevShortestLen:
