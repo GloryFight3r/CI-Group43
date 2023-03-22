@@ -3,7 +3,9 @@ from Maze import Coordinate, Maze
 from PathSpecification import PathSpecification
 from Ant import Ant
 import numpy as np 
+from multiprocessing import Queue
 from DiagramHistory import AntColonyHistory
+from Route import Route
 
 # Class representing the first assignment. Finds shortest path between two points in a maze according to a specific
 # path specification.
@@ -25,12 +27,19 @@ class AntColonyOptimization:
      # Loop that starts the shortest path process
      # @param spec Spefication of the route we wish to optimize
      # @return ACO optimized route
-    def find_shortest_route(self, path_specification, alpha: float, random_start: float, toxic_start: float, convergence: int, alpha_ants):
+    def find_shortest_route(self, path_specification, alpha: float, random_start: float, toxic_start: float, convergence: int, alpha_ants, queue: Queue):
         self.maze.reset()
         route = None 
         ant = None
         routes = None
+        #print("TUKA")
+        print(path_specification)
 
+        if path_specification.start == path_specification.end:
+            queue.put(Route(path_specification.start))
+            print("RETURNED")
+            return [Route(path_specification.start)]
+        
         to_start = []
         for i in range(self.maze.width):
             for j in range(self.maze.length):
@@ -92,4 +101,11 @@ class AntColonyOptimization:
 
             colonyHistory.append_record(gen, shortestLen, successful_ends / self.ants_per_gen)
 
+        #print(route)
+
+        print("RETURNED")
+        queue.put(route)
+        #if route == None:
+        #    print(path_specification)
+        #print(route)
         return (route, colonyHistory)
