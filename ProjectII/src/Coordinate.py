@@ -1,4 +1,5 @@
 from Direction import Direction
+import numpy as np
 
 # Class representing a coordinate.
 class Coordinate:
@@ -35,10 +36,20 @@ class Coordinate:
     def subtract_direction(self, dir):
         return self.subtract_coordinate(self.dir_to_coordinate_delta(dir))
 
+    def get_distance(self, other):
+        return np.sqrt(((other.y - self.y) ** 2) + ((other.x - self.x) ** 2) + 0.01)
+
+    def __hash__(self):
+        return hash((self.x, self.y))
+
+
     # String representation of coordinate
     # @return String representation of coordinate
     def __str__(self):
-        return str(self.x) + ", " + str(self.y)
+        return "" + str(self.x) + ", " + str(self.y) + ""
+    
+    def __repr__(self):
+        return self.__str__()
 
     # Equals method for Coordinate
     # @param other Other Coordinate to check
