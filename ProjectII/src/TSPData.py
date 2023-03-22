@@ -127,15 +127,17 @@ class TSPData:
         for i in range(number_of_product):
             product_to_product.append([])
             for j in range(number_of_product):
+                product_to_product[i].append(None)
                 start = self.product_locations[i]
                 end = self.product_locations[j]
-                my_thread.append(Process(target=aco.find_shortest_route, args=[PathSpecification(start, end), alpha, random_start, toxic_start, convergence, alpha_ants, queue]))
+                my_thread.append(Process(target=aco.find_shortest_route, args=[PathSpecification(start, end), alpha, random_start, toxic_start, convergence, alpha_ants, queue, (i, j)]))
 
         for cur_thread in my_thread:
             cur_thread.start()
 
         for ind, cur_thread in enumerate(my_thread):
-            product_to_product[int(ind/number_of_product)].append(queue.get())#cur_thread.join()[0])
+            route, location = queue.get()
+            product_to_product[location[0]][location[1]] = route#cur_thread.join()[0])
 
         return product_to_product
 
@@ -149,14 +151,20 @@ class TSPData:
         my_thread = []
         queue = Queue()
         for i in range(len(self.product_locations)):
-            my_thread.append(Process(target=aco.find_shortest_route, args=[PathSpecification(start, self.product_locations[i]), alpha, random_start, toxic_start, convergence, alpha_ants, queue]))
+            start_to_products.append(None)
+            my_thread.append(Process(target=aco.find_shortest_route, args=[PathSpecification(start, self.product_locations[i]), alpha, random_start, toxic_start, convergence, alpha_ants, queue, (i, 0)]))
             #my_thread.append(Process(target=aco.find_shortest_route, args=([[PathSpecification(start, self.product_locations[i])]], alpha, random_start, toxic_start, convergence, alpha_ants,)))
 
         for cur_thread in my_thread:
             cur_thread.start()
 
         for ind, cur_thread in enumerate(my_thread):
-            start_to_products.append(queue.get())#cur_thread.join()[0])
+            route, location = queue.get()
+
+            start_to_products[location[0]] = route#cur_thread.join()[0])
+        
+        #for x in start_to_products:
+        #    print(x)    
 
         return start_to_products
 
@@ -169,14 +177,17 @@ class TSPData:
         my_thread = []
         queue = Queue()
         for i in range(len(self.product_locations)):    
-            my_thread.append(Process(target=aco.find_shortest_route, args=[PathSpecification(self.product_locations[i], end), alpha, random_start, toxic_start, convergence, alpha_ants, queue]))
+            products_to_end.append(None)
+            my_thread.append(Process(target=aco.find_shortest_route, args=[PathSpecification(self.product_locations[i], end), alpha, random_start, toxic_start, convergence, alpha_ants, queue, (i, 0)]))
             #my_thread.append(Process(target=aco.find_shortest_route, args=([[PathSpecification(self.product_locations[i], end)]], alpha, random_start, toxic_start, convergence, alpha_ants,)))
         
         for cur_thread in my_thread:
             cur_thread.start()
 
         for ind, cur_thread in enumerate(my_thread):
-            products_to_end.append(queue.get())#cur_thread.join()[0])
+            route, location = queue.get()
+
+            products_to_end[location[0]] = route#cur_thread.join()[0])
 
         return products_to_end
 

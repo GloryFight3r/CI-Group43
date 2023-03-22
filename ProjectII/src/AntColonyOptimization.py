@@ -27,7 +27,7 @@ class AntColonyOptimization:
      # Loop that starts the shortest path process
      # @param spec Spefication of the route we wish to optimize
      # @return ACO optimized route
-    def find_shortest_route(self, path_specification, alpha: float, random_start: float, toxic_start: float, convergence: int, alpha_ants, queue: Queue):
+    def find_shortest_route(self, path_specification, alpha: float, random_start: float, toxic_start: float, convergence: int, alpha_ants, queue: Queue, pr_loc):
         self.maze.reset()
         route = None 
         ant = None
@@ -35,10 +35,10 @@ class AntColonyOptimization:
         #print("TUKA")
         print(path_specification)
 
-        if path_specification.start == path_specification.end:
-            queue.put(Route(path_specification.start))
-            print("RETURNED")
-            return [Route(path_specification.start)]
+        #if path_specification.start == path_specification.end:
+        #    queue.put(Route(path_specification.start))
+        #    print("RETURNED")
+        #    return [Route(path_specification.start)]
         
         to_start = []
         for i in range(self.maze.width):
@@ -104,7 +104,7 @@ class AntColonyOptimization:
         #print(route)
 
         print("RETURNED")
-        queue.put(route)
+        queue.put((route, pr_loc))
         #if route == None:
         #    print(path_specification)
         #print(route)
