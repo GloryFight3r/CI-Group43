@@ -8,9 +8,12 @@ class MyQLearning(QLearning):
         # TODO Auto-generated method stub
         cur_value = self.get_q(state, action)
         values = self.get_action_values(state_next, possible_actions)
+        #print(values)
         new_value = cur_value + alfa * (r + gamma * np.max(values) - cur_value)
 
         # set the value
+        #if(new_value != 0):
+        #    print("DAS", new_value)
         self.set_q(state, action, new_value)
 
         return
