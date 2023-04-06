@@ -2,6 +2,8 @@ import traceback
 import sys
 from Action import Action
 from State import State
+import numpy as np
+import matplotlib.pyplot as plt
 
 class Maze:
     def __init__(self, file):
@@ -75,3 +77,19 @@ class Maze:
         # simply returns the state at the location the agent is at
         # use this to find the current state of the agent, or use Agent.getState(Maze m)
         return self.states[y][x]
+
+    def visualize(self):
+        converted_matrix = list(map(lambda row: list(map(lambda x: int(x.type), row)), self.states))
+        print(converted_matrix)
+        matrix = (np.asarray(converted_matrix) ^ 1) * 100
+
+        print(matrix)
+	
+        fig, ax = plt.subplots(figsize=(7.5, 7.5))
+        ax.matshow(matrix, cmap=plt.cm.Reds, alpha=0.3)
+        for i in range(matrix.shape[0]):
+            for j in range(matrix.shape[1]):
+                ax.text(x=j, y=i,s="", va='center', ha='center', size='xx-large')
+        
+        plt.title('Maze and path', fontsize=18)
+        plt.show()
