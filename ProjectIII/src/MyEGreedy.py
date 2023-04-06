@@ -28,7 +28,8 @@ class MyEGreedy:
             cur_reward = q_learning.get_q(newAgent.get_state(maze), x)
             all_rewards.append(cur_reward)
 
-        return actions[np.argmax(all_rewards)]
+        return np.random.choice(np.flatnonzero(all_rewards == all_rewards.max()))
+        
 
     def get_egreedy_action(self, agent, maze, q_learning, epsilon):
         # TODO to select between random or best action selection based on epsilon.
