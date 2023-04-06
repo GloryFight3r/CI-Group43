@@ -3,6 +3,7 @@ from Action import Action
 from Maze import Maze
 from QLearning import QLearning
 import numpy as np
+import copy
 
 class MyEGreedy:
     def __init__(self):
@@ -23,12 +24,10 @@ class MyEGreedy:
         all_rewards = []
             
         for x in actions:
-            newAgent = agent
-            newAgent.do_action(x, maze)
-            cur_reward = q_learning.get_q(newAgent.get_state(maze), x)
+            cur_reward = q_learning.get_q(agent.get_state(maze), x)
             all_rewards.append(cur_reward)
 
-        return np.random.choice(np.flatnonzero(all_rewards == all_rewards.max()))
+        return actions[np.random.choice(np.flatnonzero(all_rewards == np.array(all_rewards).max()))]
         
 
     def get_egreedy_action(self, agent, maze, q_learning, epsilon):
