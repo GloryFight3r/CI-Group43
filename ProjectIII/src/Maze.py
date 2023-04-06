@@ -77,7 +77,7 @@ class Maze:
         # simply returns the state at the location the agent is at
         # use this to find the current state of the agent, or use Agent.getState(Maze m)
         return self.states[y][x]
-
+    
     def visualize(self):
         converted_matrix = list(map(lambda row: list(map(lambda x: int(x.type), row)), self.states))
         print(converted_matrix)
